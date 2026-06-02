@@ -1,25 +1,30 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+
 import { LoginSchema } from "../core/zod/login.zod";
 import IconNonEye from "../assets/icons/icon-non-eye";
 import IconEye from "../assets/icons/icon-eye";
 import googleIcon from "../assets/icons/google-icon.svg";
-import facebookIcon from "../assets/icons/facebook-icon.svg";
+
 import { Form, FormField, FormItem, FormControl } from "../components/ui/form";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
-import { useRouter } from "next/navigation";
+
+const loginImage = "https://i.postimg.cc/3rv94DTb/Thiet-ke-chua-co-ten.png";
 
 export default function LoginPage() {
   const form = useForm<z.infer<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: {
+      email: "",
+      password: "",
+    },
     shouldFocusError: false,
   });
 
@@ -31,179 +36,159 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] relative">
-      {/* Logo Notion nhỏ trên đầu */}
-      <header className="absolute left-8 top-6 flex items-center gap-2">
-        <Image
-          src="/logo.png"
-          alt="Notion"
-          width={24}
-          height={24}
-          className="object-contain"
-        />
-        <span className="text-[15px] font-medium text-neutral-800">Notion</span>
-      </header>
+    <main className="min-h-screen overflow-hidden bg-[#f8fafc] text-[#0f172a]">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[53%_47%]">
+        <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-white px-6">
+          <div className="pointer-events-none absolute -left-28 -top-28 h-72 w-72 rounded-full bg-[#0b3f96]/[0.06] blur-3xl" />
+          <div className="pointer-events-none absolute bottom-[-120px] right-[-120px] h-80 w-80 rounded-full bg-[#f7b622]/[0.10] blur-3xl" />
 
-      {/* Center container */}
-      <div className="mx-auto flex min-h-screen max-w-[680px] items-center justify-center px-6">
-        <div className="w-full text-center">
-          {/* Title */}
-          <h1 className="text-[44px] font-extrabold leading-[1.1] tracking-tight text-neutral-900">
-            Sign in
-          </h1>
+          <div className="absolute left-[9.3%] top-[39px] flex items-center gap-[11px]">
+            <div className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[#0b3f96] shadow-[0_10px_25px_rgba(11,63,150,0.18)]">
+              <span className="text-[17px] font-black italic leading-none text-[#f7b622]">
+                HP
+              </span>
+            </div>
 
-          {/* Sub */}
-          <p className="mt-2 text-[14px] text-neutral-600">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/signup"
-              className="font-medium text-sky-600 hover:text-sky-700"
-            >
-              Sign up
-            </Link>
-          </p>
-
-          {/* Form */}
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="mx-auto mt-6 w-full max-w-[420px] space-y-4 text-left"
-            >
-              {/* Email */}
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="mb-1 text-[12px] font-medium text-neutral-700">
-                      Work email
-                    </div>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="Enter your email address..."
-                        {...field}
-                        className="h-[40px] rounded-md border border-neutral-300 bg-white text-[14px] focus-visible:ring-2 focus-visible:ring-neutral-200 focus-visible:ring-offset-0"
-                        isError={!!form.formState.errors.email}
-                        errorMessage={form.formState.errors.email?.message?.toString()}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              {/* Password */}
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="mb-1 text-[12px] font-medium text-neutral-700">
-                      Password
-                    </div>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={isPasswordVisible ? "text" : "password"}
-                          placeholder="Enter your password"
-                          {...field}
-                          className="h-[40px] rounded-md border border-neutral-300 bg-white pr-10 text-[14px] focus-visible:ring-2 focus-visible:ring-neutral-200 focus-visible:ring-offset-0"
-                          isError={!!form.formState.errors.password}
-                          errorMessage={form.formState.errors.password?.message?.toString()}
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setIsPasswordVisible(!isPasswordVisible)
-                          }
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
-                          aria-label={
-                            isPasswordVisible
-                              ? "Hide password"
-                              : "Show password"
-                          }
-                        >
-                          {isPasswordVisible ? <IconEye /> : <IconNonEye />}
-                        </button>
-                      </div>
-                    </FormControl>
-
-                    <div className="mt-2 text-right">
-                      <Link
-                        href="/login/forgot-password"
-                        className="text-[13px] font-medium text-sky-600 hover:text-sky-700"
-                      >
-                        Forgot password
-                      </Link>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {/* Primary button */}
-              <Button
-                type="submit"
-                className="mt-1 h-[40px] w-full rounded-md bg-neutral-900 text-[14px] font-semibold text-white hover:bg-black/90"
-              >
-                Continue
-              </Button>
-
-              {/* SAML link */}
-              <div className="mt-2 text-center text-[13px] text-neutral-600">
-                You can also{" "}
-                <button
-                  type="button"
-                  className="font-medium text-sky-600 hover:text-sky-700"
-                >
-                  continue with SAML SSO
-                </button>
-              </div>
-
-              {/* Divider */}
-              <div className="my-3 h-px w-full bg-neutral-200" />
-
-              {/* Social buttons */}
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  className="flex h-[40px] w-full items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white text-[14px] font-medium text-neutral-800 hover:bg-neutral-50"
-                >
-                  <Image src={googleIcon} alt="Google" width={18} height={18} />
-                  Continue with Google
-                </button>
-
-                <button
-                  type="button"
-                  className="flex h-[40px] w-full items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white text-[14px] font-medium text-neutral-800 hover:bg-neutral-50"
-                >
-                  <Image
-                    src={facebookIcon}
-                    alt="Facebook"
-                    width={18}
-                    height={18}
-                  />
-                  Continue with Facebook
-                </button>
-                {/* Muốn giống ảnh Notion hơn: thay Facebook bằng Apple + icon Apple */}
-              </div>
-
-              {/* Terms */}
-              <p className="mx-auto mt-4 max-w-[420px] text-center text-[11px] leading-5 text-neutral-500">
-                By clicking “Continue with Apple/Google/Email/SAML” above, you
-                acknowledge that you have read and understood, and agree to our{" "}
-                <Link href="/terms" className="underline">
-                  Terms &amp; Conditions
-                </Link>{" "}
-                and{" "}
-                <Link href="/privacy" className="underline">
-                  Privacy Policy
-                </Link>
-                .
+            <div className="leading-none">
+              <p className="text-[20px] font-extrabold tracking-[-0.04em] text-[#0b3f96]">
+                Hồng Phát
               </p>
-            </form>
-          </Form>
-        </div>
+              <p className="mt-[3px] text-[10px] font-bold uppercase tracking-[0.18em] text-[#f7b622]">
+                Inox & Cơ Khí
+              </p>
+            </div>
+          </div>
+
+          <div className="relative w-full max-w-[404px]">
+            <div className="mb-8 inline-flex rounded-full border border-[#dbe7ff] bg-[#f5f8ff] px-4 py-2 text-[13px] font-semibold text-[#0b3f96]">
+              Quản lý báo giá & hóa đơn
+            </div>
+
+            <h1 className="text-[34px] font-extrabold leading-none tracking-[-0.04em] text-[#0f172a]">
+              Đăng nhập
+            </h1>
+
+            <p className="mt-[13px] text-[15px] font-medium tracking-[-0.01em] text-[#64748b]">
+              Nhập tài khoản để tiếp tục vào hệ thống Hồng Phát.
+            </p>
+
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="mt-[36px] space-y-[15px]"
+              >
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="mb-[10px] text-[14px] font-semibold tracking-[-0.01em] text-[#0f172a]">
+                        Email
+                      </div>
+
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="Nhập email của bạn"
+                          {...field}
+                          className="h-[50px] rounded-[12px] border border-[#dbe3ef] bg-[#f8fbff] px-[19px] text-[14px] font-semibold text-[#0f172a] shadow-none outline-none placeholder:text-[#94a3b8] focus-visible:border-[#0b3f96] focus-visible:ring-4 focus-visible:ring-[#0b3f96]/10 focus-visible:ring-offset-0"
+                          isError={!!form.formState.errors.email}
+                          errorMessage={form.formState.errors.email?.message?.toString()}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="mb-[10px] text-[14px] font-semibold tracking-[-0.01em] text-[#0f172a]">
+                        Mật khẩu
+                      </div>
+
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={isPasswordVisible ? "text" : "password"}
+                            placeholder="••••••••"
+                            {...field}
+                            className="h-[50px] rounded-[12px] border border-[#dbe3ef] bg-[#f8fbff] px-[19px] pr-12 text-[14px] font-semibold text-[#0f172a] shadow-none outline-none placeholder:text-[#94a3b8] focus-visible:border-[#0b3f96] focus-visible:ring-4 focus-visible:ring-[#0b3f96]/10 focus-visible:ring-offset-0"
+                            isError={!!form.formState.errors.password}
+                            errorMessage={form.formState.errors.password?.message?.toString()}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setIsPasswordVisible((value) => !value)
+                            }
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94a3b8] transition hover:text-[#0b3f96]"
+                          >
+                            {isPasswordVisible ? <IconEye /> : <IconNonEye />}
+                          </button>
+                        </div>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex items-center justify-between pt-[4px]">
+                  <label className="flex cursor-pointer items-center gap-[9px] text-[14px] font-semibold tracking-[-0.02em] text-[#334155]">
+                    <input
+                      type="checkbox"
+                      className="h-[16px] w-[16px] rounded-[4px] border border-[#b8c5d8] accent-[#0b3f96]"
+                    />
+                    Ghi nhớ đăng nhập
+                  </label>
+
+                  <button
+                    type="button"
+                    className="text-[14px] font-semibold tracking-[-0.02em] text-[#0b3f96] transition hover:text-[#082f73] hover:underline"
+                  >
+                    Quên mật khẩu
+                  </button>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="!mt-[24px] h-[50px] w-full rounded-[12px] bg-[#0b3f96] text-[15px] font-extrabold tracking-[-0.02em] text-white shadow-[0_16px_35px_rgba(11,63,150,0.22)] transition hover:bg-[#082f73]"
+                >
+                  Đăng nhập
+                </Button>
+
+                <button
+                  type="button"
+                  className="flex h-[50px] w-full items-center justify-center gap-[13px] rounded-[12px] border border-[#dbe3ef] bg-white text-[15px] font-bold tracking-[-0.02em] text-[#64748b] transition hover:bg-[#f8fafc]"
+                >
+                  <Image src={googleIcon} alt="Google" width={20} height={20} />
+                  Đăng nhập với Google
+                </button>
+
+                <div className="pt-[10px] text-center">
+                  <p className="text-[14px] font-medium tracking-[-0.02em] text-[#94a3b8]">
+                    Hệ thống nội bộ dành cho{" "}
+                    <span className="font-bold text-[#0b3f96]">Hồng Phát</span>
+                  </p>
+
+                  <div className="mx-auto mt-[10px] h-[18px] w-[98px] rounded-t-full border-t-[3px] border-[#f7b622]" />
+                </div>
+              </form>
+            </Form>
+          </div>
+        </section>
+
+        <section className="relative hidden min-h-screen overflow-hidden bg-[#063591] lg:flex lg:items-center lg:justify-center">
+          <img
+            src={loginImage}
+            alt="Hồng Phát"
+            className="h-full max-h-screen w-full object-contain object-center"
+            draggable={false}
+          />
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

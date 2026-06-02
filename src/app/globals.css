@@ -140,3 +140,28 @@ body {
 :root {
   font-feature-settings: "kern", "liga", "calt", "tnum";
 }
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+
+  #print-area {
+    position: fixed;
+    inset: 0;
+    display: block !important;
+    width: 210mm;
+    height: 297mm;
+    overflow: hidden;
+    background: white;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}
