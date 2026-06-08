@@ -47,7 +47,7 @@ export default function PrintableInvoice({ invoice }: PrintableInvoiceProps) {
   );
 
   return (
-    <div id="print-area" className="hidden print:block">
+    <div id="print-area">
       <div className="mx-auto h-[287mm] w-[200mm] overflow-hidden bg-white p-[4mm] text-[10.5px] leading-[1.25] text-black">
         <div className="relative h-full border-[2px] border-[#12306d] px-[7mm] py-[5mm]">
           <div className="absolute left-2 top-2 h-5 w-5 border-l-2 border-t-2 border-[#12306d]" />
@@ -55,33 +55,57 @@ export default function PrintableInvoice({ invoice }: PrintableInvoiceProps) {
           <div className="absolute bottom-2 left-2 h-5 w-5 border-b-2 border-l-2 border-[#12306d]" />
           <div className="absolute bottom-2 right-2 h-5 w-5 border-b-2 border-r-2 border-[#12306d]" />
 
-          <div className="relative text-center">
-            <h1 className="text-[20px] font-bold uppercase text-red-700">
-              HÓA ĐƠN BÁN LẺ
-            </h1>
-            <p className="text-[14px] font-bold italic text-red-700">
-              (RETAIL INVOICE)
-            </p>
-            <p className="mt-2">
-              Ngày <i>(Date)</i> {hasItems ? invoice.date || "" : ""}
-            </p>
+          <div className="grid min-h-[112px] grid-cols-[135px_1fr_150px] items-start">
+            <div className="flex flex-col items-center">
+              <img
+                src={qrUrl}
+                alt="QR thanh toán"
+                className="h-[102px] w-[102px] object-contain"
+              />
+              <p className="-mt-1 text-center text-[9.5px] font-bold">
+                Phạm Thị Kim Ánh
+              </p>
+              <p className="text-center text-[9.5px] font-bold">
+                MB: 1000100106044
+              </p>
+            </div>
 
-            <div className="absolute right-0 top-0 text-left text-[11px] leading-6">
-              <p>
-                Ký hiệu <i>(Serial)</i>:{" "}
-                <b>{hasItems ? invoice.serial || "" : ""}</b>
+            <div className="pt-4 text-center">
+              <h1 className="text-[20px] font-bold uppercase text-red-700">
+                HÓA ĐƠN BÁN LẺ
+              </h1>
+              <p className="text-[14px] font-bold italic text-red-700">
+                (RETAIL INVOICE)
               </p>
-              <p>
-                Số <i>(No.)</i>:{" "}
-                <b className="text-red-700">
-                  {hasItems ? invoice.code || "" : ""}
-                </b>
-              </p>
+             
+                <p className="mt-2">
+                  Ngày <i>(Date)</i> ............................ tháng .............. năm ..............
+                </p>
+            </div>
+
+            <div className="space-y-2 pt-5 text-left text-[11px]">
+              <div className="flex items-center gap-2">
+                <span>
+                  Ký hiệu <i>(Serial)</i>:
+                </span>
+                <span className="inline-block w-[75px] border-b border-dotted border-black">
+                  {invoice.serial || ""}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span>
+                  Số <i>(No.)</i>:
+                </span>
+                <span className="inline-block w-[100px] border-b border-dotted border-black font-bold text-red-700">
+                  {invoice.code || ""}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="mt-5 border-t border-gray-300 pt-3">
-            <div className="grid grid-cols-[1fr_120px] gap-4">
+          <div className="mt-3 border-t border-gray-300 pt-3">
+            <div className="grid grid-cols-[1fr_340px] gap-6">
               <div className="space-y-1">
                 <p>
                   Đơn vị bán hàng <i>(Seller)</i>:{" "}
@@ -117,18 +141,17 @@ export default function PrintableInvoice({ invoice }: PrintableInvoiceProps) {
                 </div>
               </div>
 
-              <div className="flex flex-col items-center justify-start">
-                <img
-                  src={qrUrl}
-                  alt="QR thanh toán Phạm Thị Kim Ánh"
-                  className="h-[112px] w-[112px] object-contain"
-                />
-                <p className="mt-1 text-center text-[10px] font-bold">
-                  Phạm Thị Kim Ánh
+              <div className="mt-1 border-l-2 border-red-600 pl-4 text-[12px] font-semibold leading-[1.6] text-red-700">
+                <p className="mb-3 text-center text-[18px] font-bold italic leading-none">
+                  Chuyên gia công - lắp ráp - sửa chữa
                 </p>
-                <p className="text-center text-[10px] font-bold">
-                  MB: 1000100106044
-                </p>
+
+                <div className="space-y-0.5">
+                  <p>◆ Thùng đá, thùng cách nhiệt, thùng nấu</p>
+                  <p>◆ Khuôn kem, khay đông lạnh, máy hút khói, chữ nổi</p>
+                  <p>◆ Máng xối công trình, hệ thống ống hơi</p>
+                  <p>◆ Nhận thiết kế, gia công: Inox, Nhôm, Tôn</p>
+                </div>
               </div>
             </div>
           </div>
@@ -160,7 +183,16 @@ export default function PrintableInvoice({ invoice }: PrintableInvoiceProps) {
             </p>
           </div>
 
-          <table className="mt-3 w-full border-collapse border border-black text-center text-[11px]">
+          <table className="mt-3 w-full table-fixed border-collapse border border-black text-center text-[11px]">
+            <colgroup>
+              <col className="w-[7%]" />
+              <col className="w-[40%]" />
+              <col className="w-[7%]" />
+              <col className="w-[10%]" />
+              <col className="w-[15%]" />
+              <col className="w-[21%]" />
+            </colgroup>
+
             <thead>
               <tr>
                 <th className="border border-black p-1">
@@ -194,6 +226,7 @@ export default function PrintableInvoice({ invoice }: PrintableInvoiceProps) {
                   <i>(Amount)</i>
                 </th>
               </tr>
+
               <tr>
                 {["(1)", "(2)", "(3)", "(4)", "(5)", "(6)=(4)x(5)"].map(
                   (item) => (
