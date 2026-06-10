@@ -465,7 +465,7 @@ export default function InvoicesPage() {
                     setOpenCreateMenu(false);
 
                     if (item === "Lập hóa đơn bán lẻ") {
-                      router.push("/invoices/create");
+                      router.push("/invoices/form");
                       return;
                     }
                     if (item === "Lập phiếu xuất kho") {
@@ -753,7 +753,7 @@ export default function InvoicesPage() {
                       <button
                         onClick={() =>
                           router.push(
-                            `/invoices/create?mode=edit&id=${invoice.id}`,
+                            `/invoices/form?mode=edit&id=${invoice.id}`,
                           )
                         }
                         className="font-semibold text-[#063591]"
