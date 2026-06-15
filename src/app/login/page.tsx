@@ -60,9 +60,6 @@ export default function LoginPage() {
           </div>
 
           <div className="relative w-full max-w-[404px]">
-            <div className="mb-8 inline-flex rounded-full border border-[#dbe7ff] bg-[#f5f8ff] px-4 py-2 text-[13px] font-semibold text-[#0b3f96]">
-              Quản lý báo giá & hóa đơn
-            </div>
 
             <h1 className="text-[34px] font-extrabold leading-none tracking-[-0.04em] text-[#0f172a]">
               Đăng nhập
