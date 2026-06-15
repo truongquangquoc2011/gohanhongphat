@@ -1,5 +1,5 @@
 "use client";
-
+import PrintableQuote from "../components/PrintableQuote";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -15,7 +15,6 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import PrintableInvoice from "../components/PrintableInvoice";
 
 type ItemRow = {
   id: number;
@@ -27,6 +26,8 @@ type ItemRow = {
   price: number;
   discount: number;
 };
+
+type QuoteStatus = "Nháp" | "Đã ghi" | "Đã chuyển" | "Hết hiệu lực" | "Đã hủy";
 
 const formatMoney = (value: number) => value.toLocaleString("vi-VN");
 
@@ -101,33 +102,32 @@ const numberToVietnameseWords = (value: number) => {
   return text.charAt(0).toUpperCase() + text.slice(1) + " đồng";
 };
 
-export default function CreateRetailInvoicePage() {
+export default function QuoteFormPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const mode = searchParams.get("mode");
   const editId = searchParams.get("id");
-  const isEditMode = mode === "edit";
+  const isEditMode = Boolean(editId);
 
-  const [invoiceCode, setInvoiceCode] = useState("BL26-000006");
-  const [invoiceDate, setInvoiceDate] = useState("2026-06-02");
-  const [currentStep, setCurrentStep] = useState(1);
-
+  const [quoteCode, setQuoteCode] = useState("BG26-000006");
+  const [quoteDate, setQuoteDate] = useState("2026-06-02");
+  const [validUntil, setValidUntil] = useState("2026-06-17");
+  const [status, setStatus] = useState<QuoteStatus>("Nháp");
+  const [step, setStep] = useState<1 | 2>(1);
   const [taxCode, setTaxCode] = useState("");
   const [buyerName, setBuyerName] = useState("");
   const [buyerAddress, setBuyerAddress] = useState("");
   const [buyerPerson, setBuyerPerson] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [accountNo, setAccountNo] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("Chuyển khoản");
-  const [paidAmount, setPaidAmount] = useState(0);
-  const [invoiceNote, setInvoiceNote] = useState("");
-  const [internalNote, setInternalNote] = useState("");
 
+  const [deliveryTime, setDeliveryTime] = useState("");
+  const [paymentTerm, setPaymentTerm] = useState("Thanh toán theo thỏa thuận");
+  const [quoteNote, setQuoteNote] = useState("");
+  const [internalNote, setInternalNote] = useState("");
+  const [creator, setCreator] = useState("Phạm Thị Kim Ánh");
+  const [includeVat, setIncludeVat] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [showConfirmIssue, setShowConfirmIssue] = useState(false);
-  const [isIssued, setIsIssued] = useState(false);
 
   const [rows, setRows] = useState<ItemRow[]>([
     {
@@ -145,38 +145,36 @@ export default function CreateRetailInvoicePage() {
   useEffect(() => {
     if (!isEditMode || !editId) return;
 
-    const savedInvoices = JSON.parse(
-      localStorage.getItem("hongphat_mock_invoices") || "[]",
+    const savedQuotes = JSON.parse(
+      localStorage.getItem("hongphat_mock_quotes") || "[]",
     );
 
-    const invoice = savedInvoices.find(
-      (item: any) => String(item.id) === editId,
-    );
+    const quote = savedQuotes.find((item: any) => String(item.id) === editId);
 
-    if (!invoice) {
-      alert("Không tìm thấy hóa đơn cần sửa");
-      router.push("/invoices");
+    if (!quote) {
+      alert("Không tìm thấy báo giá cần sửa");
+      router.push("/quotes");
       return;
     }
 
-    setInvoiceCode(invoice.code ?? "BL26-000006");
-    setInvoiceDate(invoice.invoiceDate ?? invoice.createdDate ?? "2026-06-02");
-    setBuyerName(invoice.customer ?? "");
-    setTaxCode(invoice.taxCode === "-" ? "" : (invoice.taxCode ?? ""));
-    setBuyerAddress(invoice.buyerAddress ?? "");
-    setBuyerPerson(invoice.buyerPerson ?? "");
-    setPhone(invoice.phone ?? "");
-    setEmail(invoice.email ?? "");
-    setAccountNo(invoice.accountNo ?? "");
-    setPaymentMethod(invoice.paymentMethod ?? "Chuyển khoản");
-    setPaidAmount(invoice.paidValue ?? 0);
-    setInvoiceNote(invoice.invoiceNote ?? "");
-    setInternalNote(invoice.internalNote ?? "");
-    setIsIssued(Boolean(invoice.isIssued));
-
-    if (invoice.items?.length) setRows(invoice.items);
-
-    setCurrentStep(1);
+    setQuoteCode(quote.code ?? "BG26-000006");
+    setQuoteDate(quote.createdDate ?? quote.quoteDateValue ?? "2026-06-02");
+    setValidUntil(quote.validUntilValue ?? "");
+    setStatus(quote.status ?? "Nháp");
+    setStep(quote.status === "Nháp" ? 1 : 2);
+    setBuyerName(quote.customer ?? "");
+    setTaxCode(quote.taxCode === "-" ? "" : (quote.taxCode ?? ""));
+    setBuyerAddress(quote.buyerAddress ?? quote.address ?? "");
+    setBuyerPerson(quote.buyerPerson ?? quote.contactPerson ?? "");
+    setPhone(quote.phone ?? "");
+    setEmail(quote.email ?? "");
+    setDeliveryTime(quote.deliveryTime ?? "");
+    setPaymentTerm(quote.paymentTerm ?? "Thanh toán theo thỏa thuận");
+    setQuoteNote(quote.quoteNote ?? quote.note ?? "");
+    setInternalNote(quote.internalNote ?? "");
+    setCreator(quote.creator ?? quote.createdBy?.name ?? "Phạm Thị Kim Ánh");
+    setIncludeVat(Boolean(quote.includeVat));
+    if (quote.items?.length) setRows(quote.items);
   }, [editId, isEditMode, router]);
 
   const subtotal = useMemo(() => {
@@ -186,43 +184,24 @@ export default function CreateRetailInvoicePage() {
     }, 0);
   }, [rows]);
 
-  const debtAmount = Math.max(subtotal - paidAmount, 0);
-  const isViewStep = currentStep === 2;
-
-  const printableInvoice = {
-    code: invoiceCode,
-    date: invoiceDate,
-    buyerName: buyerPerson,
-    companyName: buyerName,
-    taxCode,
-    address: buyerAddress,
-    paymentMethod,
-    accountNo,
-    amountInWords: numberToVietnameseWords(subtotal),
-    vatRate: 0,
-    items: rows
-      .filter((row) => row.name.trim())
-      .map((row) => ({
-        name: row.name,
-        unit: row.unit,
-        quantity: row.quantity,
-        price: row.price,
-      })),
-  };
+  const vatRate = includeVat ? 0.1 : 0;
+  const vatAmount = includeVat ? Math.round(subtotal * vatRate) : 0;
+  const grandTotal = subtotal + vatAmount;
 
   const updateRow = <K extends keyof ItemRow>(
     id: number,
     key: K,
     value: ItemRow[K],
   ) => {
-    if (isViewStep) return;
+    if (status === "Đã chuyển") return;
+
     setRows((current) =>
       current.map((row) => (row.id === id ? { ...row, [key]: value } : row)),
     );
   };
 
   const addEmptyRow = () => {
-    if (isViewStep) return;
+    if (status === "Đã chuyển") return;
 
     setRows((current) => [
       ...current,
@@ -240,7 +219,7 @@ export default function CreateRetailInvoicePage() {
   };
 
   const removeRow = (id: number) => {
-    if (isViewStep) return;
+    if (status === "Đã chuyển") return;
 
     setRows((current) =>
       current.length === 1 ? current : current.filter((row) => row.id !== id),
@@ -248,7 +227,7 @@ export default function CreateRetailInvoicePage() {
   };
 
   const duplicateRow = (id: number) => {
-    if (isViewStep) return;
+    if (status === "Đã chuyển") return;
 
     const row = rows.find((item) => item.id === id);
     if (!row) return;
@@ -257,7 +236,7 @@ export default function CreateRetailInvoicePage() {
   };
 
   const loadMockCustomer = () => {
-    if (isViewStep) return;
+    if (status === "Đã chuyển") return;
 
     setTaxCode("0319461460");
     setBuyerName("CÔNG TY CỔ PHẦN MANDACONS");
@@ -265,85 +244,131 @@ export default function CreateRetailInvoicePage() {
     setBuyerPerson("Anh Minh");
     setPhone("0909000000");
     setEmail("mandacons@example.com");
-    setAccountNo("0123456789");
   };
 
-  const buildInvoicePayload = (validItems: ItemRow[]) => ({
+  const buildQuotePayload = (
+    newStatus: QuoteStatus,
+    validItems: ItemRow[],
+  ) => ({
     id: isEditMode && editId ? Number(editId) : Date.now(),
-    code: invoiceCode,
-    customer: buyerName,
+    code: quoteCode,
+    customer: buyerName || "Bản nháp chưa có tên",
     taxCode: taxCode || "-",
     createdAt: new Date().toLocaleString("vi-VN"),
-    createdDate: new Date().toISOString().slice(0, 10),
-    invoiceDate,
+    createdDate: quoteDate,
+    quoteDate,
+    quoteDateText: new Date(quoteDate).toLocaleDateString("vi-VN"),
+    validUntilValue: validUntil,
+    validUntil: validUntil
+      ? new Date(validUntil).toLocaleDateString("vi-VN")
+      : "",
     totalValue: subtotal,
-    paidValue: paidAmount,
-    status:
-      paidAmount >= subtotal
-        ? "Đã thanh toán"
-        : paidAmount > 0
-          ? "Thanh toán một phần"
-          : "Chưa thanh toán",
-    creator: "Phạm Thị Kim Ánh",
-    paymentMethod,
-    invoiceType: "Hóa đơn bán lẻ",
+    includeVat,
+    vatRate: includeVat ? 10 : 0,
+    vatAmount,
+    grandTotal,
+    status: newStatus,
+    creator,
     buyerPerson,
     buyerAddress,
     phone,
     email,
-    accountNo,
-    invoiceNote,
+    deliveryTime,
+    paymentTerm,
+    quoteNote,
     internalNote,
     items: validItems,
-    isIssued,
+    createdBy: {
+      id: "u-admin",
+      name: creator,
+    },
+    updatedAt: new Date().toISOString(),
   });
 
-  const handleSaveDraft = () => {
-    const draft = {
-      id: isEditMode && editId ? Number(editId) : Date.now(),
-      code: invoiceCode,
-      customer: buyerName || "Bản nháp chưa có tên",
-      taxCode: taxCode || "-",
-      createdAt: new Date().toLocaleString("vi-VN"),
-      createdDate: new Date().toISOString().slice(0, 10),
-      invoiceDate,
-      totalValue: subtotal,
-      paidValue: paidAmount,
-      status: "Nháp",
-      creator: "Phạm Thị Kim Ánh",
-      paymentMethod,
-      invoiceType: "Hóa đơn bán lẻ",
-      buyerPerson,
-      buyerAddress,
-      phone,
-      email,
-      accountNo,
-      invoiceNote,
-      internalNote,
-      items: rows,
-      isDraft: true,
-    };
+  const saveQuote = (newStatus: QuoteStatus) => {
+    if (newStatus !== "Nháp") {
+      if (!buyerName.trim()) {
+        alert("Vui lòng nhập tên đơn vị / khách hàng");
+        return;
+      }
 
-    const oldDrafts = JSON.parse(
-      localStorage.getItem("hongphat_mock_invoice_drafts") || "[]",
-    );
+      if (!buyerAddress.trim()) {
+        alert("Vui lòng nhập địa chỉ");
+        return;
+      }
 
-    localStorage.setItem(
-      "hongphat_mock_invoice_drafts",
-      JSON.stringify([draft, ...oldDrafts]),
-    );
+      const validItems = rows.filter(
+        (row) => row.name.trim() && row.quantity > 0 && row.price > 0,
+      );
 
-    alert(`Đã lưu nháp hóa đơn ${invoiceCode}`);
-  };
+      if (validItems.length === 0) {
+        alert("Vui lòng nhập ít nhất 1 dòng hàng hóa hợp lệ");
+        return;
+      }
 
-  const handleSave = () => {
-    if (!buyerName.trim()) {
-      alert("Vui lòng nhập tên đơn vị / khách hàng");
+      saveToStorage(newStatus, validItems);
       return;
     }
 
-    if (!buyerAddress.trim()) {
-      alert("Vui lòng nhập địa chỉ");
+    saveToStorage("Nháp", rows);
+  };
+
+  const saveToStorage = (newStatus: QuoteStatus, validItems: ItemRow[]) => {
+    const payload = buildQuotePayload(newStatus, validItems);
+
+    const oldQuotes = JSON.parse(
+      localStorage.getItem("hongphat_mock_quotes") || "[]",
+    );
+
+    if (isEditMode && editId) {
+      const existed = oldQuotes.some((item: any) => String(item.id) === editId);
+
+      const updatedQuotes = existed
+        ? oldQuotes.map((item: any) =>
+            String(item.id) === editId
+              ? {
+                  ...item,
+                  ...payload,
+                  id: item.id,
+                  invoiceCode: item.invoiceCode,
+                }
+              : item,
+          )
+        : [payload, ...oldQuotes];
+
+      localStorage.setItem(
+        "hongphat_mock_quotes",
+        JSON.stringify(updatedQuotes),
+      );
+      setStatus(newStatus);
+      setStep(newStatus === "Nháp" ? 1 : 2);
+      alert(`Đã cập nhật báo giá ${quoteCode}`);
+      return;
+    }
+
+    localStorage.setItem(
+      "hongphat_mock_quotes",
+      JSON.stringify([payload, ...oldQuotes]),
+    );
+
+    setStatus(newStatus);
+    setStep(newStatus === "Nháp" ? 1 : 2);
+
+    alert(
+      newStatus === "Nháp"
+        ? `Đã lưu nháp ${quoteCode}`
+        : `Đã ghi báo giá ${quoteCode}`,
+    );
+  };
+
+  const convertToInvoice = () => {
+    if (status === "Đã chuyển") {
+      alert("Báo giá này đã được chuyển thành hóa đơn rồi");
+      return;
+    }
+
+    if (!buyerName.trim()) {
+      alert("Vui lòng nhập tên đơn vị / khách hàng trước khi chuyển hóa đơn");
       return;
     }
 
@@ -356,83 +381,112 @@ export default function CreateRetailInvoicePage() {
       return;
     }
 
-    const newInvoice = buildInvoicePayload(validItems);
+    const invoiceCode = `BL26-${String(Date.now()).slice(-6)}`;
+    const quoteId = isEditMode && editId ? Number(editId) : Date.now();
 
-    const oldInvoices = JSON.parse(
+    const savedInvoices = JSON.parse(
       localStorage.getItem("hongphat_mock_invoices") || "[]",
     );
 
-    if (isEditMode && editId) {
-      const existed = oldInvoices.some(
-        (item: any) => String(item.id) === editId,
-      );
-
-      const updatedInvoices = existed
-        ? oldInvoices.map((item: any) =>
-            String(item.id) === editId
-              ? { ...item, ...newInvoice, id: item.id }
-              : item,
-          )
-        : [newInvoice, ...oldInvoices];
-
-      localStorage.setItem(
-        "hongphat_mock_invoices",
-        JSON.stringify(updatedInvoices),
-      );
-
-      alert(`Đã cập nhật hóa đơn ${invoiceCode}`);
-      setCurrentStep(2);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
-    localStorage.setItem(
-      "hongphat_mock_invoices",
-      JSON.stringify([newInvoice, ...oldInvoices]),
-    );
-
-    alert(`Đã lưu hóa đơn ${invoiceCode}`);
-    setCurrentStep(2);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleIssueInvoice = () => {
-    const oldInvoices = JSON.parse(
-      localStorage.getItem("hongphat_mock_invoices") || "[]",
-    );
-
-    const updatedInvoices = oldInvoices.map((item: any) =>
-      item.code === invoiceCode
-        ? {
-            ...item,
-            isIssued: true,
-            status:
-              paidAmount >= subtotal
-                ? "Đã thanh toán"
-                : paidAmount > 0
-                  ? "Thanh toán một phần"
-                  : "Chưa thanh toán",
-          }
-        : item,
-    );
+    const newInvoice = {
+      id: Date.now(),
+      code: invoiceCode,
+      customer: buyerName,
+      taxCode: taxCode || "-",
+      createdAt: new Date().toLocaleString("vi-VN"),
+      createdDate: new Date().toISOString().slice(0, 10),
+      invoiceDate: new Date().toISOString().slice(0, 10),
+      totalValue: subtotal,
+      paidValue: 0,
+      status: "Chưa thanh toán",
+      creator,
+      paymentMethod: "Chuyển khoản",
+      invoiceType: "Hóa đơn bán lẻ",
+      buyerPerson,
+      buyerAddress,
+      phone,
+      email,
+      invoiceNote: quoteNote,
+      internalNote,
+      items: validItems,
+      sourceQuoteId: quoteId,
+      sourceQuoteCode: quoteCode,
+    };
 
     localStorage.setItem(
       "hongphat_mock_invoices",
-      JSON.stringify(updatedInvoices),
+      JSON.stringify([newInvoice, ...savedInvoices]),
     );
 
-    setIsIssued(true);
-    setShowConfirmIssue(false);
-    alert(`Đã xuất hóa đơn ${invoiceCode}`);
-  };
+    const savedQuotes = JSON.parse(
+      localStorage.getItem("hongphat_mock_quotes") || "[]",
+    );
 
+    const quotePayload = {
+      ...buildQuotePayload("Đã chuyển", validItems),
+      id: quoteId,
+      invoiceCode,
+      convertedBy: creator,
+      convertedAt: new Date().toISOString(),
+    };
+
+    const existed = savedQuotes.some(
+      (item: any) => String(item.id) === String(quoteId),
+    );
+
+    const updatedQuotes = existed
+      ? savedQuotes.map((item: any) =>
+          String(item.id) === String(quoteId)
+            ? { ...item, ...quotePayload }
+            : item,
+        )
+      : [quotePayload, ...savedQuotes];
+
+    localStorage.setItem("hongphat_mock_quotes", JSON.stringify(updatedQuotes));
+
+    alert(`Đã chuyển ${quoteCode} thành hóa đơn ${invoiceCode}`);
+    router.push("/invoices");
+  };
+  const printableQuoteData = {
+    code: quoteCode,
+    quoteDate: quoteDate ? new Date(quoteDate).toLocaleDateString("vi-VN") : "",
+    validUntil: validUntil
+      ? new Date(validUntil).toLocaleDateString("vi-VN")
+      : "",
+    customerName: buyerName,
+    contactPerson: buyerPerson,
+    taxCode,
+    address: buyerAddress,
+    phone,
+    email,
+    creator,
+    deliveryTime,
+    paymentTerm,
+    note: quoteNote,
+    includeVat,
+    vatRate: includeVat ? 10 : 0,
+    vatAmount,
+    amountInWords: numberToVietnameseWords(grandTotal),
+    totalAmount: grandTotal,
+    items: rows
+      .filter((row) => row.name.trim())
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        unit: row.unit,
+        quantity: row.quantity,
+        price: row.price,
+        vat: includeVat ? 10 : 0,
+        total: Math.max(row.quantity * row.price - row.discount, 0),
+      })),
+  };
   return (
-    <div className="min-h-screen bg-[#eef2f8]">
+    <div className="min-h-full bg-[#eef2f8] p-4">
       <div className="mx-auto max-w-[1480px] border border-[#d8e0ee] bg-white">
         <header className="border-b border-[#d8e0ee] bg-white px-5 py-3">
           <div className="mb-3 flex items-center justify-between">
             <button
-              onClick={() => router.push("/invoices")}
+              onClick={() => router.push("/quotes")}
               className="flex items-center gap-2 text-sm font-semibold text-[#063591]"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -441,71 +495,62 @@ export default function CreateRetailInvoicePage() {
 
             <div className="flex items-center gap-2">
               <span className="text-sm">
-                Trạng thái:{" "}
-                <b className="text-[#063591]">
-                  {isIssued
-                    ? "Đã xuất hóa đơn"
-                    : currentStep === 2
-                      ? "Chờ xuất hóa đơn"
-                      : "Nháp mới"}
-                </b>
+                Trạng thái: <b className="text-[#063591]">{status}</b>
               </span>
               <span className="text-sm text-[#64748b]">|</span>
               <span className="text-sm">
-                Phân loại: <b className="text-[#063591]">Hóa đơn bán lẻ</b>
+                Phân loại: <b className="text-[#063591]">Báo giá</b>
               </span>
             </div>
           </div>
 
           <div className="flex items-center justify-center gap-28 text-xs text-[#64748b]">
-            {["Nhập thông tin hóa đơn", "Xuất hóa đơn"].map((item, index) => (
-              <div key={item} className="flex flex-col items-center">
-                <div
-                  className={[
-                    "mb-1 flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold",
-                    index + 1 === currentStep
-                      ? "border-[#063591] bg-[#eef4ff] text-[#063591]"
-                      : "border-[#d8e0ee] bg-white text-[#94a3b8]",
-                  ].join(" ")}
-                >
-                  {index + 1}
+            {["Nhập thông tin báo giá", "Ghi / In / Chuyển hóa đơn"].map(
+              (item, index) => (
+                <div key={item} className="flex flex-col items-center">
+                  <div
+                    className={[
+                      "mb-1 flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold",
+                      step === index + 1
+                        ? "border-[#063591] bg-[#eef4ff] text-[#063591]"
+                        : "border-[#d8e0ee] bg-white text-[#94a3b8]",
+                    ].join(" ")}
+                  >
+                    {index + 1}
+                  </div>
+                  <span
+                    className={
+                      step === index + 1 ? "font-semibold text-[#063591]" : ""
+                    }
+                  >
+                    {item}
+                  </span>
                 </div>
-                <span
-                  className={
-                    index + 1 === currentStep
-                      ? "font-semibold text-[#063591]"
-                      : undefined
-                  }
-                >
-                  {item}
-                </span>
-              </div>
-            ))}
+              ),
+            )}
           </div>
         </header>
 
         <section className="px-5 py-4">
           <h1 className="mb-1 text-center text-[22px] font-bold uppercase text-[#0f172a]">
-            {currentStep === 2
-              ? "Xuất hóa đơn bán lẻ"
+            {step === 2
+              ? "Lập báo giá"
               : isEditMode
-                ? "Chỉnh sửa hóa đơn bán lẻ"
-                : "Lập hóa đơn bán lẻ"}
+                ? "Chỉnh sửa báo giá"
+                : "Lập báo giá"}
           </h1>
 
           <p className="mb-4 text-center text-sm text-[#64748b]">
-            {currentStep === 2
-              ? "Kiểm tra thông tin trước khi xuất hóa đơn"
-              : "Nhập thông tin khách hàng, hàng hóa và thanh toán"}
+            Nhập thông tin khách hàng, hàng hóa và điều khoản báo giá
           </p>
 
           <fieldset
-            disabled={isViewStep}
-            className={isViewStep ? "opacity-90" : ""}
+            disabled={status === "Đã chuyển" || step === 2}
+            className={status === "Đã chuyển" || step === 2 ? "opacity-90" : ""}
           >
             <div className="mb-4 border border-[#d8e0ee]">
               <div className="border-b border-[#d8e0ee] bg-[#f8fafc] px-3 py-2 text-sm font-bold">
-                Thông tin người mua hàng
+                Thông tin khách hàng và báo giá
               </div>
 
               <div className="grid grid-cols-[1fr_360px] gap-6 p-4 text-sm">
@@ -522,7 +567,7 @@ export default function CreateRetailInvoicePage() {
                   </label>
 
                   <label className="grid grid-cols-[150px_1fr] items-center gap-3">
-                    <span>Người mua hàng</span>
+                    <span>Người liên hệ</span>
                     <input
                       value={buyerPerson}
                       onChange={(e) => setBuyerPerson(e.target.value)}
@@ -582,9 +627,9 @@ export default function CreateRetailInvoicePage() {
 
                 <div className="space-y-3 border-l border-[#d8e0ee] pl-5">
                   <label className="grid grid-cols-[130px_1fr] items-center gap-3">
-                    <span>Số hóa đơn</span>
+                    <span>Số báo giá</span>
                     <input
-                      value={invoiceCode}
+                      value={quoteCode}
                       disabled
                       className="h-9 border border-[#d8e0ee] bg-[#f1f5f9] px-3 font-semibold text-[#063591]"
                     />
@@ -592,34 +637,31 @@ export default function CreateRetailInvoicePage() {
 
                   <label className="grid grid-cols-[130px_1fr] items-center gap-3">
                     <span>
-                      <b className="text-red-600">*</b> Ngày hóa đơn
+                      <b className="text-red-600">*</b> Ngày báo giá
                     </span>
                     <input
                       type="date"
-                      value={invoiceDate}
-                      onChange={(e) => setInvoiceDate(e.target.value)}
+                      value={quoteDate}
+                      onChange={(e) => setQuoteDate(e.target.value)}
                       className="h-9 border border-[#d8e0ee] px-3 outline-none focus:border-[#063591] disabled:bg-[#f1f5f9]"
                     />
                   </label>
 
                   <label className="grid grid-cols-[130px_1fr] items-center gap-3">
-                    <span>Hình thức TT</span>
-                    <select
-                      value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
+                    <span>Hiệu lực đến</span>
+                    <input
+                      type="date"
+                      value={validUntil}
+                      onChange={(e) => setValidUntil(e.target.value)}
                       className="h-9 border border-[#d8e0ee] px-3 outline-none focus:border-[#063591] disabled:bg-[#f1f5f9]"
-                    >
-                      <option>Chuyển khoản</option>
-                      <option>Tiền mặt</option>
-                      <option>Công nợ</option>
-                    </select>
+                    />
                   </label>
 
                   <label className="grid grid-cols-[130px_1fr] items-center gap-3">
-                    <span>Số tài khoản</span>
+                    <span>Người lập</span>
                     <input
-                      value={accountNo}
-                      onChange={(e) => setAccountNo(e.target.value)}
+                      value={creator}
+                      onChange={(e) => setCreator(e.target.value)}
                       className="h-9 border border-[#d8e0ee] px-3 outline-none focus:border-[#063591] disabled:bg-[#f1f5f9]"
                     />
                   </label>
@@ -703,6 +745,7 @@ export default function CreateRetailInvoicePage() {
                           <td className="border border-[#e8edf5] text-center">
                             {index + 1}
                           </td>
+
                           <td className="border border-[#e8edf5] text-center">
                             <div className="flex items-center justify-center gap-2">
                               <button
@@ -721,6 +764,7 @@ export default function CreateRetailInvoicePage() {
                               </button>
                             </div>
                           </td>
+
                           <td className="border border-[#e8edf5]">
                             <input
                               value={row.productCode}
@@ -730,6 +774,7 @@ export default function CreateRetailInvoicePage() {
                               className="h-10 w-full px-2 outline-none disabled:bg-[#f8fafc]"
                             />
                           </td>
+
                           <td className="border border-[#e8edf5]">
                             <input
                               value={row.name}
@@ -739,6 +784,7 @@ export default function CreateRetailInvoicePage() {
                               className="h-10 w-full px-2 outline-none disabled:bg-[#f8fafc]"
                             />
                           </td>
+
                           <td className="border border-[#e8edf5]">
                             <select
                               value={row.property}
@@ -752,6 +798,7 @@ export default function CreateRetailInvoicePage() {
                               <option>Khuyến mãi</option>
                             </select>
                           </td>
+
                           <td className="border border-[#e8edf5]">
                             <select
                               value={row.unit}
@@ -767,6 +814,7 @@ export default function CreateRetailInvoicePage() {
                               <option>Kg</option>
                             </select>
                           </td>
+
                           <td className="border border-[#e8edf5]">
                             <input
                               value={row.quantity}
@@ -781,6 +829,7 @@ export default function CreateRetailInvoicePage() {
                               className="h-10 w-full px-2 text-right outline-none disabled:bg-[#f8fafc]"
                             />
                           </td>
+
                           <td className="border border-[#e8edf5]">
                             <input
                               value={formatMoney(row.price)}
@@ -794,6 +843,7 @@ export default function CreateRetailInvoicePage() {
                               className="h-10 w-full px-2 text-right outline-none disabled:bg-[#f8fafc]"
                             />
                           </td>
+
                           <td className="border border-[#e8edf5]">
                             <input
                               value={formatMoney(row.discount)}
@@ -807,6 +857,7 @@ export default function CreateRetailInvoicePage() {
                               className="h-10 w-full px-2 text-right outline-none disabled:bg-[#f8fafc]"
                             />
                           </td>
+
                           <td className="border border-[#e8edf5] bg-[#f8fafc] px-2 text-right font-semibold">
                             {formatMoney(amount)}
                           </td>
@@ -820,24 +871,35 @@ export default function CreateRetailInvoicePage() {
 
             <div className="grid grid-cols-[minmax(0,1fr)_360px] items-start gap-6 border-x border-b border-[#d8e0ee] p-4">
               <div className="min-w-0 space-y-3">
-                <label className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3 text-sm">
-                  <span>Hạn thanh toán</span>
+                <label className="grid grid-cols-[150px_minmax(0,1fr)] items-center gap-3 text-sm">
+                  <span>Thời gian giao hàng</span>
                   <input
-                    type="date"
+                    value={deliveryTime}
+                    onChange={(e) => setDeliveryTime(e.target.value)}
+                    placeholder="VD: 3-5 ngày sau khi xác nhận"
                     className="h-9 w-full min-w-0 border border-[#d8e0ee] px-3 outline-none disabled:bg-[#f1f5f9]"
                   />
                 </label>
 
-                <label className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3 text-sm">
-                  <span>Ghi chú trên hóa đơn</span>
+                <label className="grid grid-cols-[150px_minmax(0,1fr)] items-center gap-3 text-sm">
+                  <span>Điều khoản thanh toán</span>
                   <input
-                    value={invoiceNote}
-                    onChange={(e) => setInvoiceNote(e.target.value)}
+                    value={paymentTerm}
+                    onChange={(e) => setPaymentTerm(e.target.value)}
                     className="h-9 w-full min-w-0 border border-[#d8e0ee] px-3 outline-none disabled:bg-[#f1f5f9]"
                   />
                 </label>
 
-                <label className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3 text-sm">
+                <label className="grid grid-cols-[150px_minmax(0,1fr)] items-center gap-3 text-sm">
+                  <span>Ghi chú báo giá</span>
+                  <input
+                    value={quoteNote}
+                    onChange={(e) => setQuoteNote(e.target.value)}
+                    className="h-9 w-full min-w-0 border border-[#d8e0ee] px-3 outline-none disabled:bg-[#f1f5f9]"
+                  />
+                </label>
+
+                <label className="grid grid-cols-[150px_minmax(0,1fr)] items-center gap-3 text-sm">
                   <span>Ghi chú nội bộ</span>
                   <input
                     value={internalNote}
@@ -847,11 +909,21 @@ export default function CreateRetailInvoicePage() {
                 </label>
 
                 <p className="pt-2 text-sm">
-                  <b>Số tiền bằng chữ:</b> {numberToVietnameseWords(subtotal)}
+                  <b>Số tiền bằng chữ:</b> {numberToVietnameseWords(grandTotal)}
                 </p>
               </div>
-
               <div className="min-w-0 space-y-2 border border-[#d8e0ee] bg-white p-3 text-sm">
+                <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
+                  <span>Thuế GTGT</span>
+                  <select
+                    value={includeVat ? "10" : "0"}
+                    onChange={(e) => setIncludeVat(e.target.value === "10")}
+                    className="h-9 w-full min-w-0 border border-[#d8e0ee] bg-white px-3 outline-none"
+                  >
+                    <option value="0">Không áp dụng VAT</option>
+                    <option value="10">VAT 10%</option>
+                  </select>
+                </div>
                 <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
                   <span>Cộng tiền hàng</span>
                   <input
@@ -862,29 +934,20 @@ export default function CreateRetailInvoicePage() {
                 </div>
 
                 <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
-                  <span>Đã thanh toán</span>
+                  <span>{includeVat ? "Thuế GTGT 10%" : "Thuế GTGT"}</span>
                   <input
-                    value={formatMoney(paidAmount)}
-                    onChange={(e) => setPaidAmount(parseMoney(e.target.value))}
-                    className="h-9 w-full min-w-0 border border-[#d8e0ee] px-3 text-right outline-none disabled:bg-[#f1f5f9]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
-                  <span>Còn nợ</span>
-                  <input
-                    value={formatMoney(debtAmount)}
+                    value={formatMoney(vatAmount)}
                     disabled
-                    className="h-9 w-full min-w-0 border border-[#d8e0ee] bg-[#f1f5f9] px-3 text-right font-bold text-red-600"
+                    className="h-9 w-full min-w-0 border border-[#d8e0ee] bg-[#f1f5f9] px-3 text-right font-semibold"
                   />
                 </div>
 
                 <div className="my-2 border-t border-[#d8e0ee]" />
 
                 <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
-                  <span>Tổng thanh toán</span>
+                  <span>Tổng báo giá</span>
                   <input
-                    value={formatMoney(subtotal)}
+                    value={formatMoney(grandTotal)}
                     disabled
                     className="h-9 w-full min-w-0 border border-[#d8e0ee] bg-[#fff7ed] px-3 text-right font-bold text-red-600"
                   />
@@ -894,110 +957,94 @@ export default function CreateRetailInvoicePage() {
           </fieldset>
 
           <footer className="flex justify-end gap-2 border-x border-b border-[#d8e0ee] bg-[#f8fafc] px-4 py-3">
-            {currentStep === 2 && (
-              <div className="mr-auto flex items-center gap-2">
-                <button
-                  onClick={() => setShowPreview(true)}
-                  className="flex h-10 items-center gap-2 border border-[#d8e0ee] bg-white px-4 text-sm font-semibold text-[#063591]"
-                >
-                  <Printer className="h-4 w-4" />
-                  Xem hóa đơn
-                </button>
+            <div className="mr-auto flex items-center gap-2">
+              <button
+                onClick={() => setShowPreview(true)}
+                className="flex h-10 items-center gap-2 border border-[#d8e0ee] bg-white px-4 text-sm font-semibold text-[#063591]"
+              >
+                <Printer className="h-4 w-4" />
+                Xem báo giá
+              </button>
 
-                <button
-                  onClick={() => setShowConfirmIssue(true)}
-                  className="flex h-10 items-center gap-2 bg-[#063591] px-4 text-sm font-bold text-white"
-                >
-                  <Download className="h-4 w-4" />
-                  Xuất hóa đơn
-                </button>
-
-                {isIssued && (
-                  <>
-                    <button
-                      onClick={() => setShowPreview(true)}
-                      className="h-10 border border-[#d8e0ee] bg-white px-4 text-sm font-semibold"
-                    >
-                      In
-                    </button>
-
-                    <button
-                      onClick={() => setShowPreview(true)}
-                      className="h-10 border border-[#d8e0ee] bg-white px-4 text-sm font-semibold"
-                    >
-                      PDF
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
+              <button
+                onClick={() => {
+                  setShowPreview(true);
+                  setTimeout(() => window.print(), 300);
+                }}
+                className="flex h-10 items-center gap-2 border border-[#d8e0ee] bg-white px-4 text-sm font-semibold"
+              >
+                <Download className="h-4 w-4" />
+                Xuất PDF
+              </button>
+            </div>
 
             <button
-              onClick={() => router.push("/invoices")}
+              onClick={() => router.push("/quotes")}
               className="flex h-10 items-center gap-2 border border-[#d8e0ee] bg-white px-4 text-sm font-semibold"
             >
               <X className="h-4 w-4" />
               Đóng
             </button>
 
-            {currentStep === 1 && (
-              <button
-                onClick={handleSaveDraft}
-                className="flex h-10 items-center gap-2 border border-[#d8e0ee] bg-white px-4 text-sm font-semibold"
-              >
-                <FilePlus2 className="h-4 w-4" />
-                Lưu nháp
-              </button>
-            )}
+            {status !== "Đã chuyển" && step === 1 && (
+              <>
+                <button
+                  onClick={() => saveQuote("Nháp")}
+                  className="flex h-10 items-center gap-2 border border-[#d8e0ee] bg-white px-4 text-sm font-semibold"
+                >
+                  <FilePlus2 className="h-4 w-4" />
+                  Lưu nháp
+                </button>
 
-            {currentStep === 1 ? (
-              <button
-                onClick={handleSave}
-                className="flex h-10 items-center gap-2 bg-[#063591] px-5 text-sm font-bold text-white"
-              >
-                <Save className="h-4 w-4" />
-                {isEditMode ? "Cập nhật" : "Ghi"}
-              </button>
-            ) : (
-              <button
-                onClick={() => setCurrentStep(1)}
-                className="flex h-10 items-center gap-2 border border-[#d8e0ee] bg-white px-5 text-sm font-bold text-[#063591]"
-              >
-                Mở chỉnh sửa
-              </button>
+                <button
+                  onClick={() => saveQuote("Đã ghi")}
+                  className="flex h-10 items-center gap-2 bg-[#063591] px-5 text-sm font-bold text-white"
+                >
+                  <Save className="h-4 w-4" />
+                  {isEditMode ? "Cập nhật" : "Ghi báo giá"}
+                </button>
+              </>
+            )}
+            {status !== "Đã chuyển" && step === 2 && (
+              <>
+                <button
+                  onClick={() => {
+                    setStep(1);
+                    setStatus("Nháp");
+                  }}
+                  className="flex h-10 items-center gap-2 border border-[#d8e0ee] bg-white px-4 text-sm font-semibold text-[#063591]"
+                >
+                  Mở ghi
+                </button>
+
+                <button
+                  onClick={convertToInvoice}
+                  className="flex h-10 items-center gap-2 bg-[#d35400] px-5 text-sm font-bold text-white"
+                >
+                  Chuyển hóa đơn
+                </button>
+              </>
             )}
           </footer>
         </section>
       </div>
 
       {showPreview && (
-        <div className="fixed inset-0 z-[999] flex items-start justify-center bg-black/50 p-6">
-          <div className="max-h-[92vh] w-[980px] overflow-auto bg-white shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-4 py-3">
+        <div className="fixed inset-0 z-[999] bg-black/50 p-6">
+          <div className="mx-auto flex h-full max-w-[1120px] flex-col overflow-hidden bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b bg-white px-5 py-3">
               <div>
-                <p className="font-bold text-[#0f172a]">
-                  {isIssued ? "Hóa đơn đã xuất" : "Hóa đơn chưa hoàn thiện"}
-                </p>
-                <p className="text-sm text-red-600">
-                  {isIssued
-                    ? "Có thể in hoặc lưu PDF"
-                    : "Chưa xác nhận xuất hóa đơn"}
-                </p>
+                <p className="font-bold text-[#0f172a]">Xem trước báo giá</p>
+                <p className="text-sm text-[#64748b]">{quoteCode}</p>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => window.print()}
-                  className="h-9 border border-[#d8e0ee] px-3 text-sm font-semibold"
+                  className="flex h-9 items-center gap-2 border border-[#d8e0ee] bg-white px-3 text-sm font-semibold"
                 >
-                  In
-                </button>
-
-                <button
-                  onClick={() => window.print()}
-                  className="h-9 border border-[#d8e0ee] px-3 text-sm font-semibold"
-                >
-                  PDF
+                  <Printer className="h-4 w-4" />
+                  In / PDF
                 </button>
 
                 <button
@@ -1009,49 +1056,8 @@ export default function CreateRetailInvoicePage() {
               </div>
             </div>
 
-            <div className="bg-[#f1f5f9] p-4">
-              <PrintableInvoice invoice={printableInvoice} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showConfirmIssue && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50">
-          <div className="w-[520px] bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b px-5 py-4">
-              <p className="font-bold">Thông báo</p>
-              <button
-                onClick={() => setShowConfirmIssue(false)}
-                className="text-xl text-[#94a3b8]"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="flex gap-4 px-5 py-8 text-sm">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-orange-300 text-2xl font-bold text-orange-500">
-                !
-              </div>
-              <p className="pt-3">
-                Bạn có chắc chắn muốn thực hiện xuất hóa đơn này hay không?
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-2 border-t px-5 py-4">
-              <button
-                onClick={handleIssueInvoice}
-                className="h-9 bg-[#063591] px-4 text-sm font-bold text-white"
-              >
-                Thực hiện
-              </button>
-
-              <button
-                onClick={() => setShowConfirmIssue(false)}
-                className="h-9 border border-[#d8e0ee] px-4 text-sm font-semibold"
-              >
-                Bỏ qua
-              </button>
+            <div className="flex-1 overflow-auto bg-[#dfe5ee] p-6">
+              <PrintableQuote quote={printableQuoteData} />
             </div>
           </div>
         </div>

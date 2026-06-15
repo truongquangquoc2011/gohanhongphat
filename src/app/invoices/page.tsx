@@ -214,8 +214,8 @@ export default function InvoicesPage() {
   }, []);
   const [activeTab, setActiveTab] = useState("Tất cả");
   const [keyword, setKeyword] = useState("");
-  const [fromDate, setFromDate] = useState("2026-04-01");
-  const [toDate, setToDate] = useState("2026-06-02");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("Tất cả trạng thái");
   const [creatorFilter, setCreatorFilter] = useState("Tất cả");
   const [paymentFilter, setPaymentFilter] = useState("Tất cả");
@@ -225,6 +225,7 @@ export default function InvoicesPage() {
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [openCreateMenu, setOpenCreateMenu] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const filteredInvoices = useMemo(() => {
     const result = invoices.filter((invoice) => {
@@ -324,10 +325,12 @@ export default function InvoicesPage() {
   };
 
   const resetFilters = () => {
+    setIsResetting(true);
+
     setActiveTab("Tất cả");
     setKeyword("");
-    setFromDate("2026-04-01");
-    setToDate("2026-06-02");
+    setFromDate("");
+    setToDate("");
     setStatusFilter("Tất cả trạng thái");
     setCreatorFilter("Tất cả");
     setPaymentFilter("Tất cả");
@@ -335,6 +338,8 @@ export default function InvoicesPage() {
     setSortField("Không sắp xếp");
     setSortDirection("Tăng dần");
     setSelectedIds([]);
+
+    setTimeout(() => setIsResetting(false), 450);
   };
 
   const handleReceivePayment = () => {
@@ -422,13 +427,13 @@ export default function InvoicesPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <header className="flex items-start justify-between">
-        <div>
-          <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-[#0f172a]">
+   <div className="flex min-h-full flex-col gap-4 p-4">
+      <header className="flex items-center justify-between py-1">
+        <div className="leading-tight">
+          <h1 className="text-[18px] font-semibold tracking-[-0.02em] text-[#0f172a]">
             Quản lý hóa đơn
           </h1>
-          <p className="mt-1 text-sm text-[#64748b]">
+          <p className="mt-0.5 text-[11px] text-[#64748b]">
             Theo dõi hóa đơn bán lẻ, báo giá, phiếu xuất kho và công nợ.
           </p>
         </div>
@@ -448,7 +453,12 @@ export default function InvoicesPage() {
           >
             <FilePlus2 className="h-4 w-4" />
             Thêm mới
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown
+              className={[
+                "h-4 w-4 transition-transform duration-300",
+                showAdvancedSearch ? "rotate-180" : "",
+              ].join(" ")}
+            />
           </button>
 
           {openCreateMenu && (
@@ -571,90 +581,104 @@ export default function InvoicesPage() {
               onClick={resetFilters}
               className="flex h-10 items-center gap-2 border border-[#d8e0ee] bg-white px-4 text-sm font-semibold"
             >
-              <RefreshCcw className="h-4 w-4" />
+              <RefreshCcw
+                className={[
+                  "h-4 w-4 transition-transform duration-500",
+                  isResetting ? "rotate-[360deg]" : "",
+                ].join(" ")}
+              />
               Đặt lại
             </button>
           </div>
 
           {showAdvancedSearch && (
-            <div className="grid grid-cols-5 gap-x-3 gap-y-4">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[#64748b]">
-                  Người tạo
-                </label>
-                <select
-                  value={creatorFilter}
-                  onChange={(e) => setCreatorFilter(e.target.value)}
-                  className="h-10 w-full border border-[#d8e0ee] bg-white px-3 text-sm outline-none"
-                >
-                  <option>Tất cả</option>
-                  <option>Phạm Thị Kim Ánh</option>
-                  <option>Nguyễn Văn Hồng</option>
-                  <option>Trương Quang Quốc</option>
-                </select>
-              </div>
+            <div
+              className={[
+                "grid overflow-hidden transition-all duration-300 ease-in-out",
+                showAdvancedSearch
+                  ? "max-h-[180px] opacity-100"
+                  : "max-h-0 opacity-0",
+              ].join(" ")}
+            >
+              <div className="grid grid-cols-5 gap-x-3 gap-y-4 pt-1">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[#64748b]">
+                    Người tạo
+                  </label>
+                  <select
+                    value={creatorFilter}
+                    onChange={(e) => setCreatorFilter(e.target.value)}
+                    className="h-10 w-full border border-[#d8e0ee] bg-white px-3 text-sm outline-none"
+                  >
+                    <option>Tất cả</option>
+                    <option>Phạm Thị Kim Ánh</option>
+                    <option>Nguyễn Văn Hồng</option>
+                    <option>Trương Quang Quốc</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[#64748b]">
-                  Thanh toán
-                </label>
-                <select
-                  value={paymentFilter}
-                  onChange={(e) => setPaymentFilter(e.target.value)}
-                  className="h-10 w-full border border-[#d8e0ee] bg-white px-3 text-sm outline-none"
-                >
-                  <option>Tất cả</option>
-                  <option>Tiền mặt</option>
-                  <option>Chuyển khoản</option>
-                  <option>Công nợ</option>
-                </select>
-              </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[#64748b]">
+                    Thanh toán
+                  </label>
+                  <select
+                    value={paymentFilter}
+                    onChange={(e) => setPaymentFilter(e.target.value)}
+                    className="h-10 w-full border border-[#d8e0ee] bg-white px-3 text-sm outline-none"
+                  >
+                    <option>Tất cả</option>
+                    <option>Tiền mặt</option>
+                    <option>Chuyển khoản</option>
+                    <option>Công nợ</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[#64748b]">
-                  Loại chứng từ
-                </label>
-                <select
-                  value={invoiceTypeFilter}
-                  onChange={(e) => setInvoiceTypeFilter(e.target.value)}
-                  className="h-10 w-full border border-[#d8e0ee] bg-white px-3 text-sm outline-none"
-                >
-                  <option>Tất cả</option>
-                  <option>Hóa đơn bán lẻ</option>
-                  <option>Phiếu xuất kho</option>
-                  <option>Giấy đề nghị thanh toán</option>
-                  <option>Báo giá</option>
-                </select>
-              </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[#64748b]">
+                    Loại chứng từ
+                  </label>
+                  <select
+                    value={invoiceTypeFilter}
+                    onChange={(e) => setInvoiceTypeFilter(e.target.value)}
+                    className="h-10 w-full border border-[#d8e0ee] bg-white px-3 text-sm outline-none"
+                  >
+                    <option>Tất cả</option>
+                    <option>Hóa đơn bán lẻ</option>
+                    <option>Phiếu xuất kho</option>
+                    <option>Giấy đề nghị thanh toán</option>
+                    <option>Báo giá</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[#64748b]">
-                  Sắp xếp theo
-                </label>
-                <select
-                  value={sortField}
-                  onChange={(e) => setSortField(e.target.value)}
-                  className="h-10 w-full border border-[#d8e0ee] bg-white px-3 text-sm outline-none"
-                >
-                  <option>Không sắp xếp</option>
-                  <option>Ngày hóa đơn</option>
-                  <option>Tổng tiền</option>
-                  <option>Còn nợ</option>
-                </select>
-              </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[#64748b]">
+                    Sắp xếp theo
+                  </label>
+                  <select
+                    value={sortField}
+                    onChange={(e) => setSortField(e.target.value)}
+                    className="h-10 w-full border border-[#d8e0ee] bg-white px-3 text-sm outline-none"
+                  >
+                    <option>Không sắp xếp</option>
+                    <option>Ngày hóa đơn</option>
+                    <option>Tổng tiền</option>
+                    <option>Còn nợ</option>
+                  </select>
+                </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[#64748b]">
-                  Thứ tự
-                </label>
-                <select
-                  value={sortDirection}
-                  onChange={(e) => setSortDirection(e.target.value)}
-                  className="h-10 w-full border border-[#d8e0ee] bg-white px-3 text-sm outline-none"
-                >
-                  <option>Tăng dần</option>
-                  <option>Giảm dần</option>
-                </select>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[#64748b]">
+                    Thứ tự
+                  </label>
+                  <select
+                    value={sortDirection}
+                    onChange={(e) => setSortDirection(e.target.value)}
+                    className="h-10 w-full border border-[#d8e0ee] bg-white px-3 text-sm outline-none"
+                  >
+                    <option>Tăng dần</option>
+                    <option>Giảm dần</option>
+                  </select>
+                </div>
               </div>
             </div>
           )}
@@ -694,7 +718,7 @@ export default function InvoicesPage() {
         </div>
 
         <div className="overflow-auto">
-          <table className="w-full min-w-[1280px] border-collapse bg-white text-left text-[12px]">
+          <table className="w-full min-w-[1450px] border-collapse bg-white text-left text-[12px] [&_td]:whitespace-nowrap [&_th]:whitespace-nowrap">
             <thead>
               <tr className="h-10 border-b border-[#d8e0ee] bg-[#f8fafc] text-[12px] font-semibold text-[#0f172a]">
                 <th className="w-12 px-3">
@@ -706,18 +730,18 @@ export default function InvoicesPage() {
                   />
                 </th>
                 <th className="w-14 px-3">STT</th>
-                <th className="w-[150px] px-3">Thao tác</th>
-                <th className="w-[115px] px-2">Số hóa đơn</th>
+                <th className="w-[120px] px-2">Thao tác</th>
+                <th className="w-[125px] px-2">Số hóa đơn</th>
                 <th className="w-[105px] px-2">Ngày HĐ</th>
-                <th className="w-[105px] px-2">Loại CT</th>
+                <th className="w-[120px] px-2">Loại CT</th>
                 <th className="w-[115px] px-2">MST</th>
-                <th className="w-[280px] px-2">Tên đơn vị / đối tác</th>
-                <th className="w-[120px] px-2 text-right">Tiền hàng</th>
+                <th className="w-[320px] px-2">Tên đơn vị / đối tác</th>
+                <th className="w-[125px] px-2 text-right">Tiền hàng</th>
                 <th className="w-[120px] px-2 text-right">Đã TT</th>
-                <th className="w-[115px] px-2 text-right">Còn nợ</th>
-                <th className="w-[105px] px-2">HTTT</th>
-                <th className="w-[105px] px-2">Trạng thái</th>
-                <th className="w-[120px] px-2">Người tạo</th>
+                <th className="w-[120px] px-2 text-right">Còn nợ</th>
+                <th className="w-[120px] px-2">HTTT</th>
+                <th className="w-[125px] px-2">Trạng thái</th>
+                <th className="w-[130px] px-2">Người tạo</th>
               </tr>
             </thead>
             <tbody>
@@ -737,8 +761,8 @@ export default function InvoicesPage() {
 
                   <td className="px-3 text-[#64748b]">{index + 1}</td>
 
-                  <td className="px-3">
-                    <div className="flex items-center gap-3">
+                  <td className="px-2">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() =>
                           alert(
@@ -760,23 +784,22 @@ export default function InvoicesPage() {
                       >
                         Sửa
                       </button>
-
                     </div>
                   </td>
 
                   <td className="whitespace-nowrap px-2 font-bold text-red-600">
                     {invoice.code}
                   </td>
-                  <td className="px-3">{invoice.invoiceDate}</td>
-                  <td className="px-3">{invoice.invoiceType}</td>
-                  <td className="px-3">{invoice.taxCode}</td>
+                  <td className="px-2">{invoice.invoiceDate}</td>
+                  <td className="px-2">{invoice.invoiceType}</td>
+                  <td className="px-2">{invoice.taxCode}</td>
                   <td
                     title={invoice.customer}
-                    className="max-w-[240px] truncate px-2 font-semibold"
+                    className="max-w-[320px] truncate px-2 font-semibold"
                   >
                     {invoice.customer}
                   </td>
-                  <td className="px-3 text-right font-bold text-[#175cff]">
+                  <td className="px-2 text-right font-bold text-[#175cff]">
                     {formatMoney(invoice.totalValue)}
                   </td>
                   <td className="px-3 text-right text-[#00994d]">
