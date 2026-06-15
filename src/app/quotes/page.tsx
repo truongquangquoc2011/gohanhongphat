@@ -27,7 +27,24 @@ type Quote = {
   creator: string;
   invoiceCode?: string;
 };
-
+type StoredQuote = {
+  id: number;
+  code?: string;
+  customer?: string;
+  taxCode?: string;
+  createdAt?: string;
+  createdDate?: string;
+  quoteDate?: string;
+  quoteDateText?: string;
+  validUntil?: string;
+  totalValue?: number;
+  status?: QuoteStatus;
+  creator?: string;
+  invoiceCode?: string;
+  createdBy?: {
+    name?: string;
+  };
+};
 const initialQuotes: Quote[] = [
   {
     id: 1,
@@ -124,9 +141,9 @@ export default function QuotesPage() {
   useEffect(() => {
     const savedQuotes = JSON.parse(
       localStorage.getItem("hongphat_mock_quotes") || "[]",
-    );
+    ) as StoredQuote[];
 
-    const normalizedQuotes = savedQuotes.map((item: any) => ({
+    const normalizedQuotes = savedQuotes.map((item) => ({
       id: item.id ?? Date.now(),
       code: item.code ?? "BG26-000000",
       customer: item.customer ?? "KHÁCH LẺ",

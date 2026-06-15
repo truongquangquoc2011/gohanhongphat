@@ -150,7 +150,7 @@ export default function CreateRetailInvoicePage() {
     );
 
     const invoice = savedInvoices.find(
-      (item: any) => String(item.id) === editId,
+      (item: Record<string, unknown>) => String(item.id) === editId,
     );
 
     if (!invoice) {
@@ -364,11 +364,11 @@ export default function CreateRetailInvoicePage() {
 
     if (isEditMode && editId) {
       const existed = oldInvoices.some(
-        (item: any) => String(item.id) === editId,
+        (item: Record<string, unknown>) => String(item.id) === editId,
       );
 
       const updatedInvoices = existed
-        ? oldInvoices.map((item: any) =>
+        ? oldInvoices.map((item: Record<string, unknown>) =>
             String(item.id) === editId
               ? { ...item, ...newInvoice, id: item.id }
               : item,
@@ -401,7 +401,7 @@ export default function CreateRetailInvoicePage() {
       localStorage.getItem("hongphat_mock_invoices") || "[]",
     );
 
-    const updatedInvoices = oldInvoices.map((item: any) =>
+    const updatedInvoices = oldInvoices.map((item: Record<string, unknown>) =>
       item.code === invoiceCode
         ? {
             ...item,

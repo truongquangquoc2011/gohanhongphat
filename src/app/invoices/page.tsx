@@ -194,7 +194,7 @@ export default function InvoicesPage() {
       localStorage.getItem("hongphat_mock_invoices") || "[]",
     );
 
-    const normalizedInvoices = savedInvoices.map((item: any) => ({
+    const normalizedInvoices = savedInvoices.map((item: Record<string, unknown>) => ({
       id: item.id ?? Date.now(),
       code: item.code ?? "BL26-000000",
       customer: item.customer ?? "KHÁCH LẺ",
