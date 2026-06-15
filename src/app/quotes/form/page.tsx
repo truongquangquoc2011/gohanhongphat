@@ -28,7 +28,35 @@ type ItemRow = {
 };
 
 type QuoteStatus = "Nháp" | "Đã ghi" | "Đã chuyển" | "Hết hiệu lực" | "Đã hủy";
-
+type StoredQuote = {
+  id: number | string;
+  code?: string;
+  customer?: string;
+  taxCode?: string;
+  createdDate?: string;
+  quoteDateValue?: string;
+  validUntilValue?: string;
+  status?: QuoteStatus;
+  buyerAddress?: string;
+  address?: string;
+  buyerPerson?: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  creator?: string;
+  deliveryTime?: string;
+  paymentTerm?: string;
+  quoteNote?: string;
+  note?: string;
+  internalNote?: string;
+  includeVat?: boolean;
+  invoiceCode?: string;
+  items?: ItemRow[];
+  createdBy?: {
+    name?: string;
+  };
+  [key: string]: unknown;
+};
 const formatMoney = (value: number) => value.toLocaleString("vi-VN");
 
 const parseMoney = (value: string) => {
@@ -147,9 +175,9 @@ export default function QuoteFormPage() {
 
     const savedQuotes = JSON.parse(
       localStorage.getItem("hongphat_mock_quotes") || "[]",
-    );
+    ) as StoredQuote[];
 
-    const quote = savedQuotes.find((item: any) => String(item.id) === editId);
+    const quote = savedQuotes.find((item) => String(item.id) === editId);
 
     if (!quote) {
       alert("Không tìm thấy báo giá cần sửa");
@@ -318,13 +346,13 @@ export default function QuoteFormPage() {
 
     const oldQuotes = JSON.parse(
       localStorage.getItem("hongphat_mock_quotes") || "[]",
-    );
+    ) as StoredQuote[];
 
     if (isEditMode && editId) {
-      const existed = oldQuotes.some((item: any) => String(item.id) === editId);
+      const existed = oldQuotes.some((item) => String(item.id) === editId);
 
       const updatedQuotes = existed
-        ? oldQuotes.map((item: any) =>
+        ? oldQuotes.map((item) =>
             String(item.id) === editId
               ? {
                   ...item,
@@ -420,7 +448,7 @@ export default function QuoteFormPage() {
 
     const savedQuotes = JSON.parse(
       localStorage.getItem("hongphat_mock_quotes") || "[]",
-    );
+    ) as StoredQuote[];
 
     const quotePayload = {
       ...buildQuotePayload("Đã chuyển", validItems),
@@ -431,11 +459,11 @@ export default function QuoteFormPage() {
     };
 
     const existed = savedQuotes.some(
-      (item: any) => String(item.id) === String(quoteId),
+      (item) => String(item.id) === String(quoteId),
     );
 
     const updatedQuotes = existed
-      ? savedQuotes.map((item: any) =>
+      ? savedQuotes.map((item) =>
           String(item.id) === String(quoteId)
             ? { ...item, ...quotePayload }
             : item,
