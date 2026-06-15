@@ -1,6 +1,7 @@
 "use client";
+
 import PrintableQuote from "../components/PrintableQuote";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -28,6 +29,7 @@ type ItemRow = {
 };
 
 type QuoteStatus = "Nháp" | "Đã ghi" | "Đã chuyển" | "Hết hiệu lực" | "Đã hủy";
+
 type StoredQuote = {
   id: number | string;
   code?: string;
@@ -57,6 +59,7 @@ type StoredQuote = {
   };
   [key: string]: unknown;
 };
+
 const formatMoney = (value: number) => value.toLocaleString("vi-VN");
 
 const parseMoney = (value: string) => {
@@ -66,18 +69,7 @@ const parseMoney = (value: string) => {
 const numberToVietnameseWords = (value: number) => {
   if (!value) return "Không đồng";
 
-  const ones = [
-    "",
-    "một",
-    "hai",
-    "ba",
-    "bốn",
-    "năm",
-    "sáu",
-    "bảy",
-    "tám",
-    "chín",
-  ];
+  const ones = ["", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
 
   const readTriple = (num: number, full = false) => {
     const hundred = Math.floor(num / 100);
@@ -130,7 +122,7 @@ const numberToVietnameseWords = (value: number) => {
   return text.charAt(0).toUpperCase() + text.slice(1) + " đồng";
 };
 
-export default function QuoteFormPage() {
+function QuoteFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -142,6 +134,7 @@ export default function QuoteFormPage() {
   const [validUntil, setValidUntil] = useState("2026-06-17");
   const [status, setStatus] = useState<QuoteStatus>("Nháp");
   const [step, setStep] = useState<1 | 2>(1);
+
   const [taxCode, setTaxCode] = useState("");
   const [buyerName, setBuyerName] = useState("");
   const [buyerAddress, setBuyerAddress] = useState("");
@@ -202,6 +195,7 @@ export default function QuoteFormPage() {
     setInternalNote(quote.internalNote ?? "");
     setCreator(quote.creator ?? quote.createdBy?.name ?? "Phạm Thị Kim Ánh");
     setIncludeVat(Boolean(quote.includeVat));
+
     if (quote.items?.length) setRows(quote.items);
   }, [editId, isEditMode, router]);
 
@@ -274,10 +268,7 @@ export default function QuoteFormPage() {
     setEmail("mandacons@example.com");
   };
 
-  const buildQuotePayload = (
-    newStatus: QuoteStatus,
-    validItems: ItemRow[],
-  ) => ({
+  const buildQuotePayload = (newStatus: QuoteStatus, validItems: ItemRow[]) => ({
     id: isEditMode && editId ? Number(editId) : Date.now(),
     code: quoteCode,
     customer: buyerName || "Bản nháp chưa có tên",
@@ -287,9 +278,7 @@ export default function QuoteFormPage() {
     quoteDate,
     quoteDateText: new Date(quoteDate).toLocaleDateString("vi-VN"),
     validUntilValue: validUntil,
-    validUntil: validUntil
-      ? new Date(validUntil).toLocaleDateString("vi-VN")
-      : "",
+    validUntil: validUntil ? new Date(validUntil).toLocaleDateString("vi-VN") : "",
     totalValue: subtotal,
     includeVat,
     vatRate: includeVat ? 10 : 0,
@@ -364,10 +353,8 @@ export default function QuoteFormPage() {
           )
         : [payload, ...oldQuotes];
 
-      localStorage.setItem(
-        "hongphat_mock_quotes",
-        JSON.stringify(updatedQuotes),
-      );
+      localStorage.setItem("hongphat_mock_quotes", JSON.stringify(updatedQuotes));
+
       setStatus(newStatus);
       setStep(newStatus === "Nháp" ? 1 : 2);
       alert(`Đã cập nhật báo giá ${quoteCode}`);
@@ -475,12 +462,11 @@ export default function QuoteFormPage() {
     alert(`Đã chuyển ${quoteCode} thành hóa đơn ${invoiceCode}`);
     router.push("/invoices");
   };
+
   const printableQuoteData = {
     code: quoteCode,
     quoteDate: quoteDate ? new Date(quoteDate).toLocaleDateString("vi-VN") : "",
-    validUntil: validUntil
-      ? new Date(validUntil).toLocaleDateString("vi-VN")
-      : "",
+    validUntil: validUntil ? new Date(validUntil).toLocaleDateString("vi-VN") : "",
     customerName: buyerName,
     contactPerson: buyerPerson,
     taxCode,
@@ -508,6 +494,7 @@ export default function QuoteFormPage() {
         total: Math.max(row.quantity * row.price - row.discount, 0),
       })),
   };
+
   return (
     <div className="min-h-full bg-[#eef2f8] p-4">
       <div className="mx-auto max-w-[1480px] border border-[#d8e0ee] bg-white">
@@ -940,6 +927,7 @@ export default function QuoteFormPage() {
                   <b>Số tiền bằng chữ:</b> {numberToVietnameseWords(grandTotal)}
                 </p>
               </div>
+
               <div className="min-w-0 space-y-2 border border-[#d8e0ee] bg-white p-3 text-sm">
                 <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
                   <span>Thuế GTGT</span>
@@ -952,6 +940,7 @@ export default function QuoteFormPage() {
                     <option value="10">VAT 10%</option>
                   </select>
                 </div>
+
                 <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
                   <span>Cộng tiền hàng</span>
                   <input
@@ -1033,6 +1022,7 @@ export default function QuoteFormPage() {
                 </button>
               </>
             )}
+
             {status !== "Đã chuyển" && step === 2 && (
               <>
                 <button
@@ -1091,5 +1081,15 @@ export default function QuoteFormPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function QuoteFormPage() {
+  return (
+    <Suspense
+      fallback={<div className="p-6 text-sm text-[#64748b]">Đang tải...</div>}
+    >
+      <QuoteFormContent />
+    </Suspense>
   );
 }

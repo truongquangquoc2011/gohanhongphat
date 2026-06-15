@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -101,7 +101,7 @@ const numberToVietnameseWords = (value: number) => {
   return text.charAt(0).toUpperCase() + text.slice(1) + " đồng";
 };
 
-export default function CreateRetailInvoicePage() {
+function CreateRetailInvoiceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -1057,5 +1057,14 @@ export default function CreateRetailInvoicePage() {
         </div>
       )}
     </div>
+  );
+}
+export default function CreateRetailInvoicePage() {
+  return (
+    <Suspense
+      fallback={<div className="p-6 text-sm text-[#64748b]">Đang tải...</div>}
+    >
+      <CreateRetailInvoiceContent />
+    </Suspense>
   );
 }
