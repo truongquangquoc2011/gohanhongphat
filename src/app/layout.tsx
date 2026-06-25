@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import AppShell from "./components/AppShell";
+import AuthProvider from "./components/AuthProvider";
 
 export const metadata: Metadata = {
   title: "Hồng Phát Management",
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body>
-        <AppShell>{children}</AppShell>
+        <AuthProvider>
+          <AppShell>{children}</AppShell>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -15,6 +15,7 @@ import googleIcon from "../assets/icons/google-icon.svg";
 import { Form, FormField, FormItem, FormControl } from "../components/ui/form";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
+import { login } from "../core/api/auth.api";
 
 const loginImage = "https://i.postimg.cc/3rv94DTb/Thiet-ke-chua-co-ten.png";
 
@@ -29,10 +30,39 @@ export default function LoginPage() {
   });
 
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const onSubmit = () => {
-    router.push("/");
+  const onSubmit = async (values: z.infer<typeof LoginSchema>) => {
+    try {
+      setIsLoading(true);
+
+      const result = await login({
+        email: values.email,
+        password: values.password,
+      });
+
+      localStorage.setItem("accessToken", result.accessToken);
+
+      localStorage.setItem("refreshToken", result.refreshToken);
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: result.userId,
+          email: result.email,
+          fullname: result.fullname,
+        }),
+      );
+
+      router.push("/");
+    } catch (error: any) {
+      console.error(error);
+
+      alert(error?.response?.data?.message || "Đăng nhập thất bại");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -60,7 +90,6 @@ export default function LoginPage() {
           </div>
 
           <div className="relative w-full max-w-[404px]">
-
             <h1 className="text-[34px] font-extrabold leading-none tracking-[-0.04em] text-[#0f172a]">
               Đăng nhập
             </h1>
@@ -151,9 +180,10 @@ export default function LoginPage() {
 
                 <Button
                   type="submit"
+                  disabled={isLoading}
                   className="!mt-[24px] h-[50px] w-full rounded-[12px] bg-[#0b3f96] text-[15px] font-extrabold tracking-[-0.02em] text-white shadow-[0_16px_35px_rgba(11,63,150,0.22)] transition hover:bg-[#082f73]"
                 >
-                  Đăng nhập
+                  {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
                 </Button>
 
                 <button

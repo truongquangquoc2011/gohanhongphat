@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Users,
   Package,
@@ -12,6 +12,7 @@ import {
   LogOut,
   HelpCircle,
 } from "lucide-react";
+import { logout } from "../core/api/auth.api";
 
 const menus = [
   { label: "Hóa đơn", href: "/invoices", icon: ReceiptText },
@@ -22,10 +23,26 @@ const menus = [
   { label: "Cài đặt", href: "/settings", icon: Settings },
 ];
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+export default function AppShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
+  const router = useRouter();
 
   if (pathname === "/login") return <>{children}</>;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+
+    localStorage.clear();
+    router.replace("/login");
+  };
 
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-[#eef2f8] text-[#0f172a]">
@@ -35,14 +52,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             href="/"
             className="flex h-full w-[176px] shrink-0 items-center gap-3 border-r border-white/15 px-4"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-white">
-              <span className="text-[17px] font-black italic leading-none text-[#063591]">
+            <div className="flex h-9 w-9 items-center justify-center bg-white">
+              <span className="text-[17px] font-black italic text-[#063591]">
                 HP
               </span>
             </div>
 
             <div className="min-w-0 leading-none">
-              <p className="truncate text-[18px] font-extrabold tracking-[-0.04em] text-white">
+              <p className="truncate text-[18px] font-extrabold text-white">
                 Hồng Phát
               </p>
               <p className="mt-[4px] text-[9px] font-bold uppercase tracking-[0.18em] text-[#f7b622]">
@@ -85,21 +102,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <HelpCircle className="h-[18px] w-[18px]" />
             </Link>
 
-            <Link
-              href="/login"
+            <button
+              onClick={handleLogout}
               title="Đăng xuất"
               className="flex h-full items-center gap-2 px-4 text-[13px] font-semibold text-white/80 transition hover:bg-red-600 hover:text-white"
             >
               <LogOut className="h-[17px] w-[17px]" />
               Đăng xuất
-            </Link>
+            </button>
           </div>
         </div>
       </header>
 
       <section className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
         {children}
-      </section>  
+      </section>
     </main>
   );
 }
