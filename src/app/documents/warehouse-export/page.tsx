@@ -360,6 +360,23 @@ function WarehouseExportContent() {
         <div className="print:block hidden">
           <PrintableWarehouseExport {...printData} />
         </div>
+
+        <style>{`
+      @media print {
+        body * { visibility: hidden; }
+        .print\\:block, .print\\:block * { visibility: visible; }
+        .print\\:block {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 210mm;
+        }
+        @page {
+          size: A4 portrait;
+          margin: 0;
+        }
+      }
+    `}</style>
       </div>
 
       <style>{`
@@ -421,11 +438,12 @@ function PrintableWarehouseExport({
         fontFamily: "Times New Roman, serif",
         fontSize: 13,
         color: "#000",
-        width: 720,
+        width: "210mm",
+        minHeight: "297mm",
         margin: "0 auto",
-        padding: "20px 28px",
-        border: "1px solid #ccc",
+        padding: "15mm 18mm",
         background: "#fff",
+        boxSizing: "border-box",
       }}
     >
       <div
@@ -631,7 +649,7 @@ function PrintableWarehouseExport({
               (Ký, họ tên)
             </div>
             {i === 0 && (
-              <div style={{ marginTop: 36, fontSize: 12 }}>{creator}</div>
+              <div style={{ marginTop: 70, fontSize: 12 }}>{creator}</div>
             )}
           </div>
         ))}
