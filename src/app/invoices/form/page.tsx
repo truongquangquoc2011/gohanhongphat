@@ -124,7 +124,7 @@ function CreateRetailInvoiceContent() {
   const [paidAmount, setPaidAmount] = useState(0);
   const [invoiceNote, setInvoiceNote] = useState("");
   const [internalNote, setInternalNote] = useState("");
-
+  const [vatRate, setVatRate] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [showConfirmIssue, setShowConfirmIssue] = useState(false);
   const [isIssued, setIsIssued] = useState(false);
@@ -186,7 +186,9 @@ function CreateRetailInvoiceContent() {
     }, 0);
   }, [rows]);
 
-  const debtAmount = Math.max(subtotal - paidAmount, 0);
+  const vatAmount = Math.round((subtotal * vatRate) / 100);
+  const totalWithVat = subtotal + vatAmount;
+  const debtAmount = Math.max(totalWithVat - paidAmount, 0);
   const isViewStep = currentStep === 2;
 
   const printableInvoice = {
@@ -198,8 +200,8 @@ function CreateRetailInvoiceContent() {
     address: buyerAddress,
     paymentMethod,
     accountNo,
-    amountInWords: numberToVietnameseWords(subtotal),
-    vatRate: 0,
+    amountInWords: numberToVietnameseWords(totalWithVat),
+    vatRate: vatRate / 100,
     items: rows
       .filter((row) => row.name.trim())
       .map((row) => ({
@@ -296,6 +298,9 @@ function CreateRetailInvoiceContent() {
     internalNote,
     items: validItems,
     isIssued,
+    vatRate,
+    vatAmount,
+    totalWithVat,
   });
 
   const handleSaveDraft = () => {
@@ -847,11 +852,28 @@ function CreateRetailInvoiceContent() {
                 </label>
 
                 <p className="pt-2 text-sm">
-                  <b>Số tiền bằng chữ:</b> {numberToVietnameseWords(subtotal)}
+                  <b>Số tiền bằng chữ:</b>{" "}
+                  {numberToVietnameseWords(totalWithVat)}
                 </p>
               </div>
 
               <div className="min-w-0 space-y-2 border border-[#d8e0ee] bg-white p-3 text-sm">
+                <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
+                  <span>Thuế suất GTGT</span>
+                  <select
+                    value={vatRate}
+                    onChange={(e) => setVatRate(Number(e.target.value))}
+                    className="h-9 w-full border border-[#d8e0ee] px-3 outline-none disabled:bg-[#f1f5f9]"
+                  >
+                    <option value={0}>Không có thuế</option>
+                    <option value={1}>1%</option>
+                    <option value={2}>2%</option>
+                    <option value={5}>5%</option>
+                    <option value={8}>8%</option>
+                    <option value={10}>10%</option>
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
                   <span>Cộng tiền hàng</span>
                   <input
@@ -860,6 +882,17 @@ function CreateRetailInvoiceContent() {
                     className="h-9 w-full min-w-0 border border-[#d8e0ee] bg-[#f1f5f9] px-3 text-right font-semibold"
                   />
                 </div>
+
+                {vatRate > 0 && (
+                  <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
+                    <span>Thuế GTGT ({vatRate}%)</span>
+                    <input
+                      value={formatMoney(vatAmount)}
+                      disabled
+                      className="h-9 w-full min-w-0 border border-[#d8e0ee] bg-[#f1f5f9] px-3 text-right font-semibold text-orange-600"
+                    />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
                   <span>Đã thanh toán</span>
@@ -884,7 +917,7 @@ function CreateRetailInvoiceContent() {
                 <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
                   <span>Tổng thanh toán</span>
                   <input
-                    value={formatMoney(subtotal)}
+                    value={formatMoney(totalWithVat)}
                     disabled
                     className="h-9 w-full min-w-0 border border-[#d8e0ee] bg-[#fff7ed] px-3 text-right font-bold text-red-600"
                   />

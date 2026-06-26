@@ -11,8 +11,10 @@ import {
   Settings,
   LogOut,
   HelpCircle,
+  FolderOpen,
 } from "lucide-react";
 import { logout } from "../core/api/auth.api";
+import { useEffect, useState } from "react";
 
 const menus = [
   { label: "Hóa đơn", href: "/invoices", icon: ReceiptText },
@@ -20,16 +22,21 @@ const menus = [
   { label: "Khách hàng", href: "/customers", icon: Users },
   { label: "Sản phẩm", href: "/products", icon: Package },
   { label: "Công nợ", href: "/debts", icon: WalletCards },
+  { label: "Chứng từ", href: "/documents", icon: FolderOpen }, // 👈 thêm dòng này
   { label: "Cài đặt", href: "/settings", icon: Settings },
 ];
 
-export default function AppShell({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [user, setUser] = useState<{ fullname: string; email: string } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) setUser(JSON.parse(raw));
+    } catch {}
+  }, []);
 
   if (pathname === "/login") return <>{children}</>;
 
@@ -39,42 +46,42 @@ export default function AppShell({
     } catch (err) {
       console.error("Logout error:", err);
     }
-
     localStorage.clear();
     router.replace("/login");
   };
+
+  // Lấy 2 chữ cái đầu tên để làm avatar
+  const initials = user?.fullname
+    ? user.fullname.split(" ").slice(-2).map((w) => w[0]).join("").toUpperCase()
+    : "?";
 
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-[#eef2f8] text-[#0f172a]">
       <header className="z-50 shrink-0 border-b border-[#082f63] bg-[#063591] text-white">
         <div className="flex h-[50px] items-center">
+          {/* Logo */}
           <Link
             href="/"
             className="flex h-full w-[176px] shrink-0 items-center gap-3 border-r border-white/15 px-4"
           >
             <div className="flex h-9 w-9 items-center justify-center bg-white">
-              <span className="text-[17px] font-black italic text-[#063591]">
-                HP
-              </span>
+              <span className="text-[17px] font-black italic text-[#063591]">HP</span>
             </div>
-
             <div className="min-w-0 leading-none">
-              <p className="truncate text-[18px] font-extrabold text-white">
-                Hồng Phát
-              </p>
+              <p className="truncate text-[18px] font-extrabold text-white">Hồng Phát</p>
               <p className="mt-[4px] text-[9px] font-bold uppercase tracking-[0.18em] text-[#f7b622]">
                 Inox & Cơ Khí
               </p>
             </div>
           </Link>
 
+          {/* Nav */}
           <nav className="flex h-full min-w-0 flex-1 items-center overflow-x-auto">
             {menus.map((item) => {
               const Icon = item.icon;
               const active =
                 pathname === item.href ||
                 (item.href !== "/" && pathname.startsWith(item.href));
-
               return (
                 <Link
                   key={item.href}
@@ -93,6 +100,7 @@ export default function AppShell({
             })}
           </nav>
 
+          {/* Right side */}
           <div className="ml-auto flex h-full items-center border-l border-white/15">
             <Link
               href="/help"
@@ -102,10 +110,23 @@ export default function AppShell({
               <HelpCircle className="h-[18px] w-[18px]" />
             </Link>
 
+            {/* User info */}
+            {user && (
+              <div className="flex h-full items-center gap-2.5 border-l border-white/15 px-4">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f7b622] text-[11px] font-black text-[#063591]">
+                  {initials}
+                </div>
+                <div className="leading-none">
+                  <p className="text-[13px] font-bold text-white">{user.fullname}</p>
+                  <p className="mt-[3px] text-[11px] text-white/50">{user.email}</p>
+                </div>
+              </div>
+            )}
+
             <button
               onClick={handleLogout}
               title="Đăng xuất"
-              className="flex h-full items-center gap-2 px-4 text-[13px] font-semibold text-white/80 transition hover:bg-red-600 hover:text-white"
+              className="flex h-full items-center gap-2 border-l border-white/15 px-4 text-[13px] font-semibold text-white/80 transition hover:bg-red-600 hover:text-white"
             >
               <LogOut className="h-[17px] w-[17px]" />
               Đăng xuất

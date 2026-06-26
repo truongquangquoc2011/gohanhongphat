@@ -6,12 +6,12 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-
+import { toast } from "sonner";
 import { LoginSchema } from "../core/zod/login.zod";
 import IconNonEye from "../assets/icons/icon-non-eye";
 import IconEye from "../assets/icons/icon-eye";
 import googleIcon from "../assets/icons/google-icon.svg";
-
+import { Loader2 } from "lucide-react";
 import { Form, FormField, FormItem, FormControl } from "../components/ui/form";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
@@ -43,9 +43,7 @@ export default function LoginPage() {
       });
 
       localStorage.setItem("accessToken", result.accessToken);
-
       localStorage.setItem("refreshToken", result.refreshToken);
-
       localStorage.setItem(
         "user",
         JSON.stringify({
@@ -55,11 +53,26 @@ export default function LoginPage() {
         }),
       );
 
+      toast.success(`Chào mừng trở lại, ${result.fullname}! 👋`, {
+        description: "Đang chuyển hướng vào hệ thống...",
+        duration: 2000,
+      });
+
+      // Delay nhỏ để user thấy toast success trước khi redirect
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
       router.push("/");
     } catch (error: any) {
       console.error(error);
 
-      alert(error?.response?.data?.message || "Đăng nhập thất bại");
+      const data = error?.response?.data;
+      const message =
+        data?.message?.[0]?.message || data?.message || "Đăng nhập thất bại";
+
+      toast.error("Đăng nhập thất bại", {
+        description: message,
+        duration: 4000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -183,7 +196,14 @@ export default function LoginPage() {
                   disabled={isLoading}
                   className="!mt-[24px] h-[50px] w-full rounded-[12px] bg-[#0b3f96] text-[15px] font-extrabold tracking-[-0.02em] text-white shadow-[0_16px_35px_rgba(11,63,150,0.22)] transition hover:bg-[#082f73]"
                 >
-                  {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Đang đăng nhập...
+                    </span>
+                  ) : (
+                    "Đăng nhập"
+                  )}
                 </Button>
 
                 <button

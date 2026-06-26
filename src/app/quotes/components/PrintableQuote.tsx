@@ -282,7 +282,7 @@ export default function PrintableQuote({ quote }: PrintableQuoteProps) {
                   !item.name && !item.unit && !item.quantity && !item.price;
 
                 return (
-                  <tr key={index} className="h-[18px]">
+                  <tr key={index} className="h-[22px]">
                     <td className="border border-black px-1">
                       {isEmpty ? "" : index + 1}
                     </td>
@@ -377,7 +377,7 @@ export default function PrintableQuote({ quote }: PrintableQuoteProps) {
             )}
           </div>
 
-          <div className="mt-7 grid grid-cols-2 text-center">
+         <div className="mt-3 grid grid-cols-2 text-center text-[9.5px]">
             <div>
               <p>
                 Khách hàng <i>(Customer)</i>

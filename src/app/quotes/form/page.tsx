@@ -69,7 +69,18 @@ const parseMoney = (value: string) => {
 const numberToVietnameseWords = (value: number) => {
   if (!value) return "Không đồng";
 
-  const ones = ["", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"];
+  const ones = [
+    "",
+    "một",
+    "hai",
+    "ba",
+    "bốn",
+    "năm",
+    "sáu",
+    "bảy",
+    "tám",
+    "chín",
+  ];
 
   const readTriple = (num: number, full = false) => {
     const hundred = Math.floor(num / 100);
@@ -147,7 +158,7 @@ function QuoteFormContent() {
   const [quoteNote, setQuoteNote] = useState("");
   const [internalNote, setInternalNote] = useState("");
   const [creator, setCreator] = useState("Phạm Thị Kim Ánh");
-  const [includeVat, setIncludeVat] = useState(false);
+  const [vatRate, setVatRate] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
 
   const [rows, setRows] = useState<ItemRow[]>([
@@ -194,7 +205,7 @@ function QuoteFormContent() {
     setQuoteNote(quote.quoteNote ?? quote.note ?? "");
     setInternalNote(quote.internalNote ?? "");
     setCreator(quote.creator ?? quote.createdBy?.name ?? "Phạm Thị Kim Ánh");
-    setIncludeVat(Boolean(quote.includeVat));
+    setVatRate(Number(quote.vatRate ?? (quote.includeVat ? 10 : 0)));
 
     if (quote.items?.length) setRows(quote.items);
   }, [editId, isEditMode, router]);
@@ -206,8 +217,7 @@ function QuoteFormContent() {
     }, 0);
   }, [rows]);
 
-  const vatRate = includeVat ? 0.1 : 0;
-  const vatAmount = includeVat ? Math.round(subtotal * vatRate) : 0;
+  const vatAmount = vatRate > 0 ? Math.round((subtotal * vatRate) / 100) : 0;
   const grandTotal = subtotal + vatAmount;
 
   const updateRow = <K extends keyof ItemRow>(
@@ -268,7 +278,10 @@ function QuoteFormContent() {
     setEmail("mandacons@example.com");
   };
 
-  const buildQuotePayload = (newStatus: QuoteStatus, validItems: ItemRow[]) => ({
+  const buildQuotePayload = (
+    newStatus: QuoteStatus,
+    validItems: ItemRow[],
+  ) => ({
     id: isEditMode && editId ? Number(editId) : Date.now(),
     code: quoteCode,
     customer: buyerName || "Bản nháp chưa có tên",
@@ -278,10 +291,12 @@ function QuoteFormContent() {
     quoteDate,
     quoteDateText: new Date(quoteDate).toLocaleDateString("vi-VN"),
     validUntilValue: validUntil,
-    validUntil: validUntil ? new Date(validUntil).toLocaleDateString("vi-VN") : "",
+    validUntil: validUntil
+      ? new Date(validUntil).toLocaleDateString("vi-VN")
+      : "",
     totalValue: subtotal,
-    includeVat,
-    vatRate: includeVat ? 10 : 0,
+    includeVat: vatRate > 0,
+    vatRate: vatRate,
     vatAmount,
     grandTotal,
     status: newStatus,
@@ -353,7 +368,10 @@ function QuoteFormContent() {
           )
         : [payload, ...oldQuotes];
 
-      localStorage.setItem("hongphat_mock_quotes", JSON.stringify(updatedQuotes));
+      localStorage.setItem(
+        "hongphat_mock_quotes",
+        JSON.stringify(updatedQuotes),
+      );
 
       setStatus(newStatus);
       setStep(newStatus === "Nháp" ? 1 : 2);
@@ -466,7 +484,9 @@ function QuoteFormContent() {
   const printableQuoteData = {
     code: quoteCode,
     quoteDate: quoteDate ? new Date(quoteDate).toLocaleDateString("vi-VN") : "",
-    validUntil: validUntil ? new Date(validUntil).toLocaleDateString("vi-VN") : "",
+    validUntil: validUntil
+      ? new Date(validUntil).toLocaleDateString("vi-VN")
+      : "",
     customerName: buyerName,
     contactPerson: buyerPerson,
     taxCode,
@@ -477,8 +497,8 @@ function QuoteFormContent() {
     deliveryTime,
     paymentTerm,
     note: quoteNote,
-    includeVat,
-    vatRate: includeVat ? 10 : 0,
+    includeVat: vatRate > 0,
+    vatRate: vatRate,
     vatAmount,
     amountInWords: numberToVietnameseWords(grandTotal),
     totalAmount: grandTotal,
@@ -490,7 +510,7 @@ function QuoteFormContent() {
         unit: row.unit,
         quantity: row.quantity,
         price: row.price,
-        vat: includeVat ? 10 : 0,
+        vat: vatRate,
         total: Math.max(row.quantity * row.price - row.discount, 0),
       })),
   };
@@ -932,12 +952,16 @@ function QuoteFormContent() {
                 <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
                   <span>Thuế GTGT</span>
                   <select
-                    value={includeVat ? "10" : "0"}
-                    onChange={(e) => setIncludeVat(e.target.value === "10")}
+                    value={vatRate}
+                    onChange={(e) => setVatRate(Number(e.target.value))}
                     className="h-9 w-full min-w-0 border border-[#d8e0ee] bg-white px-3 outline-none"
                   >
-                    <option value="0">Không áp dụng VAT</option>
-                    <option value="10">VAT 10%</option>
+                    <option value={0}>Không áp dụng VAT</option>
+                    <option value={1}>VAT 1%</option>
+                    <option value={2}>VAT 2%</option>
+                    <option value={5}>VAT 5%</option>
+                    <option value={8}>VAT 8%</option>
+                    <option value={10}>VAT 10%</option>
                   </select>
                 </div>
 
@@ -951,7 +975,7 @@ function QuoteFormContent() {
                 </div>
 
                 <div className="grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3">
-                  <span>{includeVat ? "Thuế GTGT 10%" : "Thuế GTGT"}</span>
+                  <span>{vatRate > 0 ? `Thuế GTGT ${vatRate}%` : "Thuế GTGT"}</span>
                   <input
                     value={formatMoney(vatAmount)}
                     disabled
