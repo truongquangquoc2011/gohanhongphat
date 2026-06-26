@@ -62,6 +62,7 @@ export default function LoginPage() {
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       router.push("/");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error(error);
 
