@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import {
   ChevronDown,
@@ -21,6 +21,7 @@ import {
   type InvoiceStatus,
   type GetInvoicesParams,
 } from "../core/api/invoice.api";
+import React from "react";
 
 const tabs: { label: string; value: string }[] = [
   { label: "Tất cả", value: "" },
@@ -37,6 +38,19 @@ const STATUS_LABEL: Record<string, string> = {
   PARTIAL: "Một phần",
   PAID: "Đã thanh toán",
   CANCELLED: "Đã hủy",
+};
+
+const safeDate = (value: any, format: "date" | "datetime" = "date"): string => {
+  try {
+    if (!value || typeof value === "object") return "-";
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return "-";
+    return format === "datetime"
+      ? d.toLocaleString("vi-VN")
+      : d.toLocaleDateString("vi-VN");
+  } catch {
+    return "-";
+  }
 };
 
 function StatusBadge({ status }: { status: InvoiceStatus }) {
@@ -528,13 +542,7 @@ export default function InvoicesPage() {
                     <td className="px-2 font-bold text-red-600">
                       {invoice.code}
                     </td>
-                    <td className="px-2">
-                      {invoice.invoiceDate
-                        ? new Date(invoice.invoiceDate).toLocaleDateString(
-                            "vi-VN",
-                          )
-                        : "-"}
-                    </td>
+                    <td className="px-2">{safeDate(invoice.invoiceDate)}</td>
                     <td className="px-2">{invoice.invoiceType ?? "-"}</td>
                     <td className="px-2">{invoice.taxCode ?? "-"}</td>
                     <td
@@ -580,20 +588,17 @@ export default function InvoicesPage() {
                 (p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1,
               )
               .map((p, i, arr) => (
-                <>
+                <React.Fragment key={p}>
                   {i > 0 && arr[i - 1] !== p - 1 && (
-                    <span key={`ellipsis-${p}`} className="text-[#94a3b8]">
-                      ...
-                    </span>
+                    <span className="text-[#94a3b8]">...</span>
                   )}
                   <button
-                    key={p}
                     onClick={() => setPage(p)}
                     className={p === page ? "font-semibold text-[#063591]" : ""}
                   >
                     {p}
                   </button>
-                </>
+                </React.Fragment>
               ))}
             <button
               disabled={page >= totalPages}
